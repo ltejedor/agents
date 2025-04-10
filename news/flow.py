@@ -6,7 +6,7 @@ from nodes import (
     ConductMarketResearch,
     ProjectManagerAgent,
     PitchAgent,
-    InvestmentAgent,
+    PushToDatabase
 )
 
 def create_news_to_pitch_flow():
@@ -15,13 +15,11 @@ def create_news_to_pitch_flow():
     summarize_node = SummarizeNewsArticles()
     idea_node = GenerateBusinessIdea()
     market_node = ConductMarketResearch()
-    pm_agent = ProjectManagerAgent()         # New agent: Project management/MVP estimation
-    pitch_agent = PitchAgent()               # New agent: Responsible solely for generating the pitch
-    invest_agent = InvestmentAgent()         # New agent: Responsible solely for simulating investor feedback
+    pm_agent = ProjectManagerAgent()        
+    pitch_agent = PitchAgent()
+    db_push_node = PushToDatabase()            
 
     # Chain the nodes sequentially:
-    # RSS ingestion → Summarization → Business idea generation → TAM research →
-    # Market research → MVP timeline estimation → Pitch creation → Investment simulation
-    rss_node >> summarize_node >> idea_node >> market_node >> pm_agent >> pitch_agent >> invest_agent
+    rss_node >> summarize_node >> idea_node >> market_node >> pm_agent >> pitch_agent >> db_push_node
 
     return Flow(start=rss_node)

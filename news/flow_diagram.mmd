@@ -1,0 +1,17 @@
+graph LR
+
+    subgraph sub_flow_N1[Flow]
+    N2['IngestNewsFromRSS']
+    N3['SummarizeNewsArticles']
+    N2 --> N3
+    N4['GenerateBusinessIdea']
+    N3 --> N4
+    N5['ConductMarketResearch']
+    N4 --> N5
+    N6['ProjectManagerAgent']
+    N5 --> N6
+    N7['PitchAgent']
+    N6 --> N7
+    N8['PushToDatabase']
+    N7 --> N8
+    end

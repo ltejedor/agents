@@ -30,7 +30,7 @@ class IngestNewsFromRSS(Node):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:10]:  # Limit to one article per feed for testing
+            for entry in feed.entries[:1]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,
@@ -94,6 +94,7 @@ class GenerateBusinessIdea(Node):
             prompt = f"""
 Generate a high-level business idea based on the following news summary.
 Include:
+- The startup's name
 - The target user
 - The key problem being solved
 - A brief description of the idea
@@ -102,6 +103,7 @@ Title: {article['title']}
 Summary: {article['summary']}
 
 Format your response as follows:
+Startup: <startup name>
 User: <target user>
 Problem: <problem statement>
 Idea: <brief description>
@@ -216,61 +218,30 @@ Output your pitch as a single line that begins with "Pitch:".
         return "default"
 
 
-class InvestmentAgent(Node):
+class PushToDatabase(Node):
     def prep(self, shared):
+        # Retrieve final ideas from previous node (typically PitchAgent)
         return shared.get("ideas_with_pitch", [])
     
     def exec(self, ideas):
-        final_results = []
+        # Iterate over each idea and insert it into the Supabase database
         for idea in ideas:
-            prompt = f"""
-You are an expert investment simulator.
-Based on the following business idea pitch, simulate feedback from a panel of investors which will decide on an investment amount between $0 and $10,000,000.
-Return the total investment amount.
-Pitch:
-{idea.get('pitch', '')}
-
-Output your answer as a single line beginning with "Investment:" followed by the total investment amount.
-"""
-            response = call_llm(prompt)
-            # Debug output:
-            print("InvestmentAgent LLM response:", response)
-            
-            # Update the regex to allow for an optional '$'
-            match = re.search(r"Investment:\s*\$?([\d,]+)", response, re.IGNORECASE)
-            if match:
-                inv_str = match.group(1)
-                try:
-                    investment_amount = int(inv_str.replace(",", ""))
-                except ValueError:
-                    investment_amount = 0
-            else:
-                try:
-                    investment_amount = int(response.strip().replace("$", "").replace(",", ""))
-                except ValueError:
-                    investment_amount = 0
-
-            idea["investment_amount"] = investment_amount
-            final_results.append(idea)
-        return final_results
-    
-    def post(self, shared, prep_res, exec_res):
-        shared["final_ideas"] = exec_res
-        # Save each idea to the database with the investment amount
-        for idea in exec_res:
             supabase.table("startup_ideas").insert({
                 "title": idea["title"],
                 "business_idea": idea["business_idea"],
                 "mvp_estimate": idea.get("mvp_estimate", ""),
                 "developed_idea": idea.get("developed_idea", idea["business_idea"]),
                 "pitch": idea.get("pitch", ""),
-                "investment_amount": idea["investment_amount"],
                 "source_url": idea.get("link", ""),
                 "published_at": idea.get("published", None),
             }).execute()
-        print("\n===== FINAL PITCHES AND INVESTMENTS =====\n")
+        # Return the ideas (or a success confirmation) for logging purposes
+        return ideas
+    
+    def post(self, shared, prep_res, exec_res):
+        shared["final_ideas"] = exec_res
+        print("\n===== FINAL IDEAS PUSHED TO DATABASE =====\n")
         for idea in exec_res:
             print(f"Title: {idea['title']}")
-            print(f"Pitch: {idea.get('pitch', '')}")
-            print(f"Investment Amount: {idea['investment_amount']}\n")
+            print(f"Pitch: {idea.get('pitch', '')}\n")
         return "default"
