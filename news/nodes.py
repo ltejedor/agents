@@ -100,6 +100,9 @@ Format:
             idea_text = call_llm(prompt)
             startup_ideas.append({
                 "title": article["title"],
+                "summary": article["summary"],
+                "link": article["link"],
+                "published": article["published"],
                 "idea": idea_text
             })
         return startup_ideas
