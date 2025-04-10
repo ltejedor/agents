@@ -1,9 +1,12 @@
+# news/nodes.py
 from pocketflow import Node
 import feedparser
 import yaml
 import re
 from utils.llm import call_llm
 from utils.supabase_client import supabase
+
+### Existing Nodes
 
 class IngestNewsFromRSS(Node):
     def prep(self, shared):
@@ -17,7 +20,7 @@ class IngestNewsFromRSS(Node):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:1]:  # Limit to top 5 per feed
+            for entry in feed.entries[:1]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,
@@ -32,8 +35,7 @@ class IngestNewsFromRSS(Node):
         print("\n===== INGESTED NEWS ARTICLES =====\n")
         for i, article in enumerate(exec_res):
             print(f"{i+1}. {article['title']} ({article['published']})")
-            print(article['link'])
-            print()
+            print(article['link'], "\n")
         print("==================================\n")
         return "default"
 
@@ -71,7 +73,6 @@ Only use the information given above. Do not make anything up.
             print(f"📝 {article['summary']}\n")
         print("=================================\n")
         return "default"
-
 
 class GenerateBusinessIdea(Node):
     def prep(self, shared):
@@ -112,6 +113,37 @@ Idea: <brief description>
             print(f"Idea: {idea['business_idea']}\n")
         return "default"
 
+
+class ProjectManagerAgent(Node):
+    def prep(self, shared):
+        # Use the ideas produced by the market research node.
+        return shared.get("developed_ideas", [])
+    
+    def exec(self, ideas):
+        updated_ideas = []
+        for idea in ideas:
+            prompt = f"""
+You are an experienced project manager. Given the following business idea, estimate how long it would take to build a Minimum Viable Product (MVP).
+Include key milestones (design, development, testing, launch) in a concise statement.
+Business Idea: {idea['business_idea']}
+Format your answer as a single sentence, for example:
+"Estimated MVP timeline: 8-10 weeks."
+"""
+            mvp_estimate = call_llm(prompt)
+            idea["mvp_estimate"] = mvp_estimate
+            updated_ideas.append(idea)
+        return updated_ideas
+    
+    def post(self, shared, prep_res, exec_res):
+        shared["ideas_with_pm"] = exec_res
+        print("\n===== MVP TIMELINE ESTIMATES =====\n")
+        for idea in exec_res:
+            print(f"Title: {idea['title']}")
+            print(f"MVP Estimate: {idea['mvp_estimate']}\n")
+        return "default"
+
+
+
 class ConductMarketResearch(Node):
     def prep(self, shared):
         return shared.get("business_ideas", [])
@@ -139,59 +171,79 @@ Provide your response in a clear, structured summary.
             print(f"Developed Idea: {idea['developed_idea']}\n")
         return "default"
 
-class PitchAndInvest(Node):
+class PitchAgent(Node):
     def prep(self, shared):
-        return shared.get("developed_ideas", [])
+        return shared.get("ideas_with_pm", [])
     
     def exec(self, ideas):
         final_results = []
         for idea in ideas:
             prompt = f"""
-You are an expert pitch creator and investment simulator.
-Based on the following business idea and market research, create a compelling pitch.
-Then, simulate feedback from a panel of 5 investors – each investor will decide on an investment amount between $0 and $10,000,000.
-Sum all the amounts from the 5 investors to calculate a final total investment amount.
-
+You are an expert pitch creator.
+Based on the following business idea, TAM research, market research, and MVP timeline, create a compelling pitch.
 Business Idea and Research:
-{idea['developed_idea']}
+{idea.get('developed_idea', idea.get('business_idea'))}
+MVP Timeline: {idea.get('mvp_estimate', 'N/A')}
 
-Output your response in YAML format exactly as follows:
-~~~yaml
-pitch: <The pitch text>
-investment_amount: <Total investment amount as a number>
-~~~
-            """
+Output your pitch as a single line that begins with "Pitch:".
+"""
             response = call_llm(prompt)
-            try:
-                # Look for a YAML block enclosed in triple backticks with "yaml"
-                # (If you prefer backticks, you can revert; using tildes here avoids markdown interference.)
-                yaml_block =  re.search(r"yaml(.*?)", response, re.DOTALL)
-                if yaml_block:
-                    yaml_content = yaml_block.group(1).strip()
-                else:
-                    yaml_content = response.strip()
-                parsed = yaml.safe_load(yaml_content)
-                pitch = parsed.get("pitch", "")
-                inv_raw = parsed.get("investment_amount", 0)
-                # Convert investment_amount to integer if it is a string with commas.
-                if isinstance(inv_raw, str):
-                    try:
-                        investment_amount = int(inv_raw.replace(",", ""))
-                    except ValueError:
-                        investment_amount = 0
-                else:
-                    investment_amount = inv_raw
-            except Exception as e:
-                pitch = response
-                investment_amount = 0
-
+            # Assume the response is something like: "Pitch: <pitch text>"
+            if "Pitch:" in response:
+                pitch = response.split("Pitch:")[1].strip()
+            else:
+                pitch = response.strip()
             idea["pitch"] = pitch
+            final_results.append(idea)
+        return final_results
+    
+    def post(self, shared, prep_res, exec_res):
+        shared["ideas_with_pitch"] = exec_res
+        print("\n===== FINAL PITCHES =====\n")
+        for idea in exec_res:
+            print(f"Title: {idea['title']}")
+            print(f"Pitch: {idea['pitch']}\n")
+        return "default"
+
+
+class InvestmentAgent(Node):
+    def prep(self, shared):
+        return shared.get("ideas_with_pitch", [])
+    
+    def exec(self, ideas):
+        final_results = []
+        for idea in ideas:
+            prompt = f"""
+You are an expert investment simulator.
+Based on the following business idea pitch, simulate feedback from a panel of investors which will decide on an investment amount between $0 and $10,000,000.
+Return the total investment amount.
+Pitch:
+{idea.get('pitch', '')}
+
+Output your answer as a single line beginning with "Investment:" followed by the total investment amount.
+"""
+            response = call_llm(prompt)
+            # Debug output:
+            print("InvestmentAgent LLM response:", response)
+            
+            # Update the regex to allow for an optional '$'
+            match = re.search(r"Investment:\s*\$?([\d,]+)", response, re.IGNORECASE)
+            if match:
+                inv_str = match.group(1)
+                try:
+                    investment_amount = int(inv_str.replace(",", ""))
+                except ValueError:
+                    investment_amount = 0
+            else:
+                try:
+                    investment_amount = int(response.strip().replace("$", "").replace(",", ""))
+                except ValueError:
+                    investment_amount = 0
+
             idea["investment_amount"] = investment_amount
             final_results.append(idea)
         return final_results
-
-
-
+    
     def post(self, shared, prep_res, exec_res):
         shared["final_ideas"] = exec_res
         # Save each idea to the database with the investment amount
@@ -199,8 +251,9 @@ investment_amount: <Total investment amount as a number>
             supabase.table("startup_ideas").insert({
                 "title": idea["title"],
                 "business_idea": idea["business_idea"],
-                "developed_idea": idea["developed_idea"],
-                "pitch": idea["pitch"],
+                "mvp_estimate": idea.get("mvp_estimate", ""),
+                "developed_idea": idea.get("developed_idea", idea["business_idea"]),
+                "pitch": idea.get("pitch", ""),
                 "investment_amount": idea["investment_amount"],
                 "source_url": idea.get("link", ""),
                 "published_at": idea.get("published", None),
@@ -208,6 +261,6 @@ investment_amount: <Total investment amount as a number>
         print("\n===== FINAL PITCHES AND INVESTMENTS =====\n")
         for idea in exec_res:
             print(f"Title: {idea['title']}")
-            print(f"Pitch: {idea['pitch']}")
+            print(f"Pitch: {idea.get('pitch', '')}")
             print(f"Investment Amount: {idea['investment_amount']}\n")
         return "default"
