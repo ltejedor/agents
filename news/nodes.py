@@ -1,8 +1,9 @@
 from pocketflow import Node
 import feedparser
+import yaml
+import re
 from utils.llm import call_llm
 from utils.supabase_client import supabase
-
 
 class IngestNewsFromRSS(Node):
     def prep(self, shared):
@@ -14,7 +15,6 @@ class IngestNewsFromRSS(Node):
     
     def exec(self, feed_urls):
         all_articles = []
-
         for url in feed_urls:
             feed = feedparser.parse(url)
             for entry in feed.entries[:5]:  # Limit to top 5 per feed
@@ -25,21 +25,17 @@ class IngestNewsFromRSS(Node):
                     "published": entry.get("published", "")
                 }
                 all_articles.append(article)
-
         return all_articles
-
+    
     def post(self, shared, prep_res, exec_res):
         shared["news_articles"] = exec_res
-
         print("\n===== INGESTED NEWS ARTICLES =====\n")
         for i, article in enumerate(exec_res):
             print(f"{i+1}. {article['title']} ({article['published']})")
             print(article['link'])
             print()
         print("==================================\n")
-
         return "default"
-
 
 class SummarizeNewsArticles(Node):
     def prep(self, shared):
@@ -47,7 +43,6 @@ class SummarizeNewsArticles(Node):
     
     def exec(self, articles):
         summarized_articles = []
-
         for article in articles:
             prompt = f"""
 Summarize the following news article in 3-4 sentences using clear and neutral language.
@@ -64,12 +59,10 @@ Only use the information given above. Do not make anything up.
                 "summary": summary,
                 "published": article["published"]
             })
-
         return summarized_articles
-
+    
     def post(self, shared, prep_res, exec_res):
         shared["summarized_articles"] = exec_res
-
         print("\n===== SUMMARIZED ARTICLES =====\n")
         for article in exec_res:
             print(f"📰 {article['title']}")
@@ -77,52 +70,132 @@ Only use the information given above. Do not make anything up.
             print(f"🔗 {article['link']}")
             print(f"📝 {article['summary']}\n")
         print("=================================\n")
-
         return "default"
 
-class GenerateStartupIdeas(Node):
+
+class GenerateBusinessIdea(Node):
     def prep(self, shared):
         return shared.get("summarized_articles", [])
     
-    def exec(self, summaries):
-        startup_ideas = []
-        for article in summaries:
+    def exec(self, articles):
+        business_ideas = []
+        for article in articles:
             prompt = f"""
-Given the news article titled "{article['title']}" summarized as:
+Generate a high-level business idea based on the following news summary.
+Include:
+- The target user
+- The key problem being solved
+- A brief description of the idea
 
-{article['summary']}
+Title: {article['title']}
+Summary: {article['summary']}
 
-Generate one creative and feasible startup idea that responds to this trend or issue. 
-Format:
-- Name: <Startup Name>
-- Idea: <Description of what the startup does and why it matters>
+Format your response as follows:
+User: <target user>
+Problem: <problem statement>
+Idea: <brief description>
 """
             idea_text = call_llm(prompt)
-            startup_ideas.append({
+            business_ideas.append({
                 "title": article["title"],
-                "summary": article["summary"],
+                "business_idea": idea_text,
                 "link": article["link"],
-                "published": article["published"],
-                "idea": idea_text
+                "published": article["published"]
             })
-        return startup_ideas
+        return business_ideas
+    
+    def post(self, shared, prep_res, exec_res):
+        shared["business_ideas"] = exec_res
+        print("\n===== GENERATED BUSINESS IDEAS =====\n")
+        for idea in exec_res:
+            print(f"Title: {idea['title']}")
+            print(f"Idea: {idea['business_idea']}\n")
+        return "default"
+
+class ConductMarketResearch(Node):
+    def prep(self, shared):
+        return shared.get("business_ideas", [])
+    
+    def exec(self, ideas):
+        developed_ideas = []
+        for idea in ideas:
+            prompt = f"""
+You are a market research expert. Further develop the following business idea by providing detailed market research.
+Include information about potential competitors, market size, growth opportunities, and key challenges.
+Business Idea: {idea['business_idea']}
+
+Provide your response in a clear, structured summary.
+"""
+            market_research = call_llm(prompt)
+            idea["developed_idea"] = market_research
+            developed_ideas.append(idea)
+        return developed_ideas
+    
+    def post(self, shared, prep_res, exec_res):
+        shared["developed_ideas"] = exec_res
+        print("\n===== DEVELOPED BUSINESS IDEAS WITH MARKET RESEARCH =====\n")
+        for idea in exec_res:
+            print(f"Title: {idea['title']}")
+            print(f"Developed Idea: {idea['developed_idea']}\n")
+        return "default"
+
+class PitchAndInvest(Node):
+    def prep(self, shared):
+        return shared.get("developed_ideas", [])
+    
+    def exec(self, ideas):
+        final_results = []
+        for idea in ideas:
+            prompt = f"""
+You are an expert pitch creator and investment simulator.
+Based on the following business idea and market research, create a compelling pitch.
+Then, simulate feedback from a panel of 5 investors – each investor will decide on an investment amount between $0 and $10,000,000.
+Sum all the amounts from the 5 investors to calculate a final total investment amount.
+
+Business Idea and Research:
+{idea['developed_idea']}
+
+Output your response in YAML format exactly as follows:
+```yaml
+pitch: <The pitch text>
+investment_amount: <Total investment amount as a number>
+        """
+
+        response = call_llm(prompt) # Try to extract the YAML block from the response 
+        try: 
+            yaml_block = re.search(r"yaml(.*?)", response, re.DOTALL) 
+            if yaml_block: 
+                yaml_content = yaml_block.group(1).strip() 
+                parsed = yaml.safe_load(yaml_content) 
+            else: 
+                parsed = yaml.safe_load(response) 
+                pitch = parsed.get("pitch", "") 
+                investment_amount = parsed.get("investment_amount", 0) 
+        except Exception as e: # Fallback if YAML parsing fails 
+            pitch = response 
+            investment_amount = 0 
+            idea["pitch"] = pitch 
+            idea["investment_amount"] = investment_amount 
+            final_results.append(idea)
+        
+        return final_results
 
     def post(self, shared, prep_res, exec_res):
-        shared["startup_ideas"] = exec_res
-
+        shared["final_ideas"] = exec_res
+        # Save each idea to the database with the investment amount
         for idea in exec_res:
             supabase.table("startup_ideas").insert({
                 "title": idea["title"],
-                "summary": idea["summary"],
-                "idea_name": "TODO: parse name from idea text",
-                "idea_description": idea["idea"],
+                "business_idea": idea["business_idea"],
+                "developed_idea": idea["developed_idea"],
+                "pitch": idea["pitch"],
+                "investment_amount": idea["investment_amount"],
                 "source_url": idea.get("link", ""),
                 "published_at": idea.get("published", None),
             }).execute()
-
-        print("\n===== GENERATED STARTUP IDEAS =====\n")
+        print("\n===== FINAL PITCHES AND INVESTMENTS =====\n")
         for idea in exec_res:
-            print(f"📰 {idea['title']}\n💡 {idea['idea']}\n")
-        print("===================================\n")
-
+            print(f"Title: {idea['title']}")
+            print(f"Pitch: {idea['pitch']}")
+            print(f"Investment Amount: {idea['investment_amount']}\n")
         return "default"
