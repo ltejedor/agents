@@ -12,15 +12,25 @@ class IngestNewsFromRSS(Node):
     def prep(self, shared):
         # Define the RSS feed URLs (you can add more or make this dynamic)
         return [
+            # General world news - BBC
             "http://feeds.bbci.co.uk/news/rss.xml",
-            "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+            
+            # U.S. national and international headlines - NYTimes
+            "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+            
+            # Technology - Wired
+            "https://www.wired.com/feed/rss",
+            
+            
+            # Business/Finance - CNBC Top News
+            "https://www.cnbc.com/id/100003114/device/rss/rss.html"
         ]
     
     def exec(self, feed_urls):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:1]:  # Limit to one article per feed for testing
+            for entry in feed.entries[:10]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,

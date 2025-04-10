@@ -1,0 +1,4 @@
+.env
+
+news/__pycache__
+news/utils/__pycache__
