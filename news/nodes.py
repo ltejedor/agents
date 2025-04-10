@@ -17,7 +17,7 @@ class IngestNewsFromRSS(Node):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:5]:  # Limit to top 5 per feed
+            for entry in feed.entries[:1]:  # Limit to top 5 per feed
                 article = {
                     "title": entry.title,
                     "link": entry.link,
@@ -156,29 +156,41 @@ Business Idea and Research:
 {idea['developed_idea']}
 
 Output your response in YAML format exactly as follows:
-```yaml
+~~~yaml
 pitch: <The pitch text>
 investment_amount: <Total investment amount as a number>
-        """
+~~~
+            """
+            response = call_llm(prompt)
+            try:
+                # Look for a YAML block enclosed in triple backticks with "yaml"
+                # (If you prefer backticks, you can revert; using tildes here avoids markdown interference.)
+                yaml_block =  re.search(r"yaml(.*?)", response, re.DOTALL)
+                if yaml_block:
+                    yaml_content = yaml_block.group(1).strip()
+                else:
+                    yaml_content = response.strip()
+                parsed = yaml.safe_load(yaml_content)
+                pitch = parsed.get("pitch", "")
+                inv_raw = parsed.get("investment_amount", 0)
+                # Convert investment_amount to integer if it is a string with commas.
+                if isinstance(inv_raw, str):
+                    try:
+                        investment_amount = int(inv_raw.replace(",", ""))
+                    except ValueError:
+                        investment_amount = 0
+                else:
+                    investment_amount = inv_raw
+            except Exception as e:
+                pitch = response
+                investment_amount = 0
 
-        response = call_llm(prompt) # Try to extract the YAML block from the response 
-        try: 
-            yaml_block = re.search(r"yaml(.*?)", response, re.DOTALL) 
-            if yaml_block: 
-                yaml_content = yaml_block.group(1).strip() 
-                parsed = yaml.safe_load(yaml_content) 
-            else: 
-                parsed = yaml.safe_load(response) 
-                pitch = parsed.get("pitch", "") 
-                investment_amount = parsed.get("investment_amount", 0) 
-        except Exception as e: # Fallback if YAML parsing fails 
-            pitch = response 
-            investment_amount = 0 
-            idea["pitch"] = pitch 
-            idea["investment_amount"] = investment_amount 
+            idea["pitch"] = pitch
+            idea["investment_amount"] = investment_amount
             final_results.append(idea)
-        
         return final_results
+
+
 
     def post(self, shared, prep_res, exec_res):
         shared["final_ideas"] = exec_res
