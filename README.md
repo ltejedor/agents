@@ -15,7 +15,7 @@ Each agent workflow is contained in its own folder with complete documentation, 
 
 ```
 /
-├── 01-real-time-startup-ideas/
+├── news/
 ├── 02-agent-name/
 ├── 03-agent-name/
 └── ...
