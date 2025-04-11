@@ -8,10 +8,16 @@ graph LR
     N3 --> N4
     N5['ConductMarketResearch']
     N4 --> N5
-    N6['ProjectManagerAgent']
+    N6['CompetitorSearchTerm']
     N5 --> N6
-    N7['PitchAgent']
+    N7['SearchCompetitors']
     N6 --> N7
-    N8['PushToDatabase']
+    N8['FilterCompetitorResults']
     N7 --> N8
+    N9['ProjectManagerAgent']
+    N8 --> N9
+    N10['PitchAgent']
+    N9 --> N10
+    N11['PushToDatabase']
+    N10 --> N11
     end

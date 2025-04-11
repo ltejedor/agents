@@ -13,24 +13,33 @@ class IngestNewsFromRSS(Node):
         # Define the RSS feed URLs (you can add more or make this dynamic)
         return [
             # General world news - BBC
-            "http://feeds.bbci.co.uk/news/rss.xml",
+            #"http://feeds.bbci.co.uk/news/rss.xml",
             
             # U.S. national and international headlines - NYTimes
-            "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+            #"https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
             
             # Technology - Wired
-            "https://www.wired.com/feed/rss",
+            #"https://www.wired.com/feed/rss",
             
             
             # Business/Finance - CNBC Top News
-            "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+            #"https://www.cnbc.com/id/100003114/device/rss/rss.html"
+
+            # the guardian
+            "https://www.theguardian.com/world/rss",
+
+            # Wall street journal
+            "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+
+            # Altpress - music
+            "https://www.altpress.com/feed/"
         ]
     
     def exec(self, feed_urls):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:1]:  # Limit to one article per feed for testing
+            for entry in feed.entries[:4]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,
@@ -126,6 +135,105 @@ Idea: <brief description>
         return "default"
 
 
+class CompetitorSearchTerm(Node):
+    """
+    For each developed business idea, generate a competitor search term using an LLM.
+    This node simply generates and outputs a search term (or empty string) for competitor analysis.
+    """
+    def prep(self, shared: dict) -> dict:
+        developed_ideas = shared.get("developed_ideas", [])
+        current_index = shared.get("current_idea_index", 0)
+        if current_index >= len(developed_ideas):
+            raise ValueError("No more ideas left for competitor search.")
+        idea = developed_ideas[current_index]
+        business_idea = idea.get("business_idea", "Unknown business idea")
+        return {"business_idea": business_idea}
+    
+    def exec(self, inputs: dict) -> dict:
+        business_idea = inputs["business_idea"]
+        prompt = f"""
+Business Idea: {business_idea}
+Generate a concise competitor search term that would be useful for retrieving competitor information.
+Return your answer in YAML format as follows:
+
+```yaml
+search_term: <search term, or an empty string if none>
+```"""
+        response = call_llm(prompt)
+        print("CompetitorSearchTerm response:", response)
+        try:
+            yaml_str = response.split("```yaml")[1].split("```")[0].strip()
+            result = yaml.safe_load(yaml_str)
+        except Exception as e:
+            print(f"Error parsing YAML in CompetitorSearchTerm: {e}")
+            raise ValueError("Failed to parse CompetitorSearchTerm response.")
+        if "search_term" not in result:
+            raise ValueError("search_term not found in CompetitorSearchTerm response.")
+        return result
+    
+    def post(self, shared: dict, prep_res, exec_res: dict) -> str:
+        shared["competitor_search_term"] = exec_res.get("search_term", "")
+        return "default"
+
+
+class SearchCompetitors(Node):
+    """
+    Performs a DuckDuckGo search for competitor information using the provided search term.
+    Returns raw search results (a list of dictionaries).
+    """
+    def prep(self, shared: dict) -> str:
+        search_term = shared.get("competitor_search_term", "")
+        return search_term
+    
+    def exec(self, search_term: str) -> list:
+        from utils.search import search_web  # Lazy import.
+        if not search_term:
+            print("No competitor search term provided. Skipping search.")
+            return []
+        print("Performing competitor search with term:", search_term)
+        results = search_web(search_term, raw=True)
+        print("Raw competitor search results:", results)
+        return results
+    
+    def post(self, shared: dict, prep_res, exec_res: list) -> str:
+        shared["raw_competitor_results"] = exec_res
+        return "default"
+
+
+class FilterCompetitorResults(Node):
+    """
+    Processes raw search results using an LLM to extract/summarize competitor information.
+    Returns a plain string of competitor names and updates the current idea.
+    """
+    def prep(self, shared: dict) -> dict:
+        raw_results = shared.get("raw_competitor_results", [])
+        developed_ideas = shared.get("developed_ideas", [])
+        current_index = shared.get("current_idea_index", 0)
+        business_idea = developed_ideas[current_index].get("business_idea", "Unknown business idea")
+        return {"raw_results": raw_results, "business_idea": business_idea}
+    
+    def exec(self, inputs: dict) -> str:
+        raw_results = inputs["raw_results"]
+        business_idea = inputs["business_idea"]
+        prompt = f"""
+Business Idea: {business_idea}
+Raw Search Results (in JSON format): {raw_results}
+Extract and summarize any competitor information relevant to this business idea.
+Return your answer as a plain string containing only the competitor names (no extra explanation).
+"""
+        response = call_llm(prompt)
+        print("FilterCompetitorResults response:", response)
+        return response.strip()
+    
+    def post(self, shared: dict, prep_res, exec_res: str) -> str:
+        developed_ideas = shared.get("developed_ideas", [])
+        current_index = shared.get("current_idea_index", 0)
+        developed_ideas[current_index]["competitor_info"] = exec_res
+        print("Updated competitor info for idea", current_index, ":", exec_res)
+        return "default"
+
+
+
 class ProjectManagerAgent(Node):
     def prep(self, shared):
         # Use the ideas produced by the market research node.
@@ -136,10 +244,10 @@ class ProjectManagerAgent(Node):
         for idea in ideas:
             prompt = f"""
 You are an experienced project manager. Given the following business idea, estimate how long it would take to build a Minimum Viable Product (MVP).
-Include key milestones (design, development, testing, launch) in a concise statement.
+Are there any regulations or infrastructure requirements that will hold things up? Or could a developer put out something live in a few days?
 Business Idea: {idea['business_idea']}
-Format your answer as a single sentence, for example:
-"Estimated MVP timeline: 8-10 weeks."
+Format your answer as a single sentence. Start with the time it would take and then an explanation, such as: 
+2-3 Weeks, [reason]
 """
             mvp_estimate = call_llm(prompt)
             idea["mvp_estimate"] = mvp_estimate
@@ -234,6 +342,7 @@ class PushToDatabase(Node):
                 "pitch": idea.get("pitch", ""),
                 "source_url": idea.get("link", ""),
                 "published_at": idea.get("published", None),
+                "competitors": idea.get("competitor_info", "")
             }).execute()
         # Return the ideas (or a success confirmation) for logging purposes
         return ideas
