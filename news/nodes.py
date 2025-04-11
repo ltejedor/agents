@@ -16,7 +16,7 @@ class IngestNewsFromRSS(Node):
             #"http://feeds.bbci.co.uk/news/rss.xml",
             
             # U.S. national and international headlines - NYTimes
-            #"https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+           # "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
             
             # Technology - Wired
             #"https://www.wired.com/feed/rss",
@@ -26,20 +26,43 @@ class IngestNewsFromRSS(Node):
             #"https://www.cnbc.com/id/100003114/device/rss/rss.html"
 
             # the guardian
-            "https://www.theguardian.com/world/rss",
+            #"https://www.theguardian.com/world/rss",
 
             # Wall street journal
-            "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+            #"https://feeds.a.dj.com/rss/RSSWorldNews.xml",
 
             # Altpress - music
-            "https://www.altpress.com/feed/"
+            #"https://www.altpress.com/feed/"
+
+            #"https://fortune.com/feed/fortune-feeds/?id=3230629",
+
+            #"https://www.nerdwallet.com/blog/feed/"
+            
+            #"http://feeds.mashable.com/Mashable"
+
+            #"https://www.theverge.com/rss/index.xml"
+
+            #"https://www.atlasobscura.com/feeds/latest"
+            #"https://hacks.mozilla.org/feed/"
+            #"https://www.cnet.com/rss/news/"
+            "https://www.inc.com/rss/"
+
+            #"https://rss.nytimes.com/services/xml/rss/nyt/FashionandStyle.xml"
+            #"https://www.youtube.com/feeds/videos.xml?user=Bloomberg"
+            #"https://blog.google/rss/"
+            #"https://stackoverflow.blog/feed/"
+            #"https://feeds2.feedburner.com/SmallBusinessTrends"
+            #"https://www.theguardian.com/uk/travel/rss"
+            #"https://www.smashingmagazine.com/feed"
+            #"https://www.nasa.gov/news-release/feed/"
+            #"https://sciencebasedmedicine.org/feed/"
         ]
     
     def exec(self, feed_urls):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:4]:  # Limit to one article per feed for testing
+            for entry in feed.entries[:2]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,
