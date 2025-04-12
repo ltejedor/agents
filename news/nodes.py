@@ -45,7 +45,7 @@ class IngestNewsFromRSS(Node):
             #"https://www.atlasobscura.com/feeds/latest"
             #"https://hacks.mozilla.org/feed/"
             #"https://www.cnet.com/rss/news/"
-            "https://www.inc.com/rss/"
+            #"https://www.inc.com/rss/"
 
             #"https://rss.nytimes.com/services/xml/rss/nyt/FashionandStyle.xml"
             #"https://www.youtube.com/feeds/videos.xml?user=Bloomberg"
