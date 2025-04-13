@@ -1,0 +1,3 @@
+[submodule "03-benchmark-game"]
+	path = 03-benchmark-game
+	url = https://github.com/ryanbloom/re-weird-the-web
