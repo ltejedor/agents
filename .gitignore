@@ -2,3 +2,7 @@
 
 news/__pycache__
 news/utils/__pycache__
+
+04-trends/__pycache__
+
+.DS_Store

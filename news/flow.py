@@ -33,6 +33,6 @@ def create_news_to_pitch_flow() -> Flow:
     db_push_node = PushToDatabase()
 
     # Chain the nodes.
-    rss_node >> summarize_node >> idea_node >> market_node >> competitor_search >> search_competitors >> filter_results >> pm_agent >> pitch_agent >> db_push_node
+    rss_node >> summarize_node >> idea_node >> market_node >> competitor_search >> search_competitors >> filter_results >> pm_agent >> pitch_agent #>> db_push_node
 
     return Flow(start=rss_node)
