@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Killer Sockpuppet Creator</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <link href="https://fonts.googleapis.com/css2?family=Nosifer&family=Special+Elite&family=Creepster&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>Killer Sockpuppet Creator</h1>
+    <form id="characterForm">
+      <section class="form-section">
+        <h2>Appearance</h2>
+        <div class="form-group">
+          <label>Name
+            <input type="text" name="name" required class="name-input" placeholder="Enter your sockpuppet's name">
+          </label>
+        </div>
+        <div class="form-group">
+          <label>Base Material</label>
+          <div class="radio-group">
+            <label><input type="radio" name="material" value="cotton" required> Cotton Sock</label>
+            <label><input type="radio" name="material" value="wool"> Wool Sock</label>
+            <label><input type="radio" name="material" value="nylon"> Nylon Sock</label>
+            <label><input type="radio" name="material" value="silk"> Silk Sock</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Pattern</label>
+          <div class="radio-group">
+            <label><input type="radio" name="pattern" value="striped" required> Striped</label>
+            <label><input type="radio" name="pattern" value="polkadot"> Polka Dot</label>
+            <label><input type="radio" name="pattern" value="argyle"> Argyle</label>
+            <label><input type="radio" name="pattern" value="solid"> Solid Color</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Eyes</label>
+          <div class="radio-group">
+            <label><input type="radio" name="eyes" value="button" required> Button Eyes</label>
+            <label><input type="radio" name="eyes" value="googly"> Googly Eyes</label>
+            <label><input type="radio" name="eyes" value="glowing"> Glowing Eyes</label>
+            <label><input type="radio" name="eyes" value="void"> Void-like Eyes</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Accessories</label>
+          <div class="radio-group">
+            <label><input type="radio" name="accessories" value="bow" required> Evil Bow Tie</label>
+            <label><input type="radio" name="accessories" value="hat"> Tiny Top Hat</label>
+            <label><input type="radio" name="accessories" value="eyepatch"> Eyepatch</label>
+            <label><input type="radio" name="accessories" value="none"> No Accessories</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Bio</h2>
+        <div class="bio-fields">
+          <label>Tragic Backstory
+            <textarea name="backstory" maxlength="256"></textarea>
+            <span class="char-count"></span>
+          </label>
+          <label>Strategy for Killing
+            <textarea name="killStyle" maxlength="256"></textarea>
+            <span class="char-count"></span>
+          </label>
+          <label>Strategy for Staying Alive
+            <textarea name="catchphrase" maxlength="256"></textarea>
+            <span class="char-count"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>Stats (Total Points: <span id="pointsLeft">15</span>)</h2>
+        <div class="stat-group">
+          <label>
+            Stealth 
+            <button type="button" class="stat-button" data-stat="stealth" data-action="decrease">-</button>
+            <input type="number" name="stealth" min="1" max="5" value="1">
+            <button type="button" class="stat-button" data-stat="stealth" data-action="increase">+</button>
+          </label>
+          <label>
+            Strength 
+            <button type="button" class="stat-button" data-stat="strength" data-action="decrease">-</button>
+            <input type="number" name="strength" min="1" max="5" value="1">
+            <button type="button" class="stat-button" data-stat="strength" data-action="increase">+</button>
+          </label>
+          <label>
+            Speed 
+            <button type="button" class="stat-button" data-stat="speed" data-action="decrease">-</button>
+            <input type="number" name="speed" min="1" max="5" value="1">
+            <button type="button" class="stat-button" data-stat="speed" data-action="increase">+</button>
+          </label>
+          <label>
+            Perception 
+            <button type="button" class="stat-button" data-stat="perception" data-action="decrease">-</button>
+            <input type="number" name="perception" min="1" max="5" value="1">
+            <button type="button" class="stat-button" data-stat="perception" data-action="increase">+</button>
+          </label>
+          <label>
+            Cunning 
+            <button type="button" class="stat-button" data-stat="cunning" data-action="decrease">-</button>
+            <input type="number" name="cunning" min="1" max="5" value="1">
+            <button type="button" class="stat-button" data-stat="cunning" data-action="increase">+</button>
+          </label>
+        </div>
+      </section>
+
+      <div class="buttons">
+        <button type="submit">Generate JSON</button>
+      </div>
+      <pre id="jsonOutput" class="json-output"></pre>
+    </form>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

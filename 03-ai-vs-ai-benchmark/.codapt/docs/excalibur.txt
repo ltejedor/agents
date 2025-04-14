@@ -1,0 +1,161 @@
+# Excalibur.js Reference Guide
+
+## Overview
+Excalibur is a free, open source 2D game engine written in TypeScript for making 2D games in HTML5 Canvas/WebGL. It uses a theater-style metaphor with Actors in Scenes that are managed by an Engine.
+
+## Core Concepts
+
+### Engine
+- Central game container that drives everything
+- Setup: `const game = new ex.Engine({width, height, backgroundColor, etc})`
+- Start: `game.start()` or `game.start(loader).then(() => {})`
+- Access current scene: `game.currentScene`
+- Add scenes: `game.add('sceneName', new MyScene())`
+- Navigation: `game.goToScene('sceneName')`
+
+### Scene
+- Organizes game elements (actors, tilemaps, etc.)
+- Lifecycle: onInitialize, onActivate, onDeactivate
+- Add entities: `scene.add(entity)`
+- Camera: `scene.camera` for controlling view
+- Physics: `scene.physics` for collision detection/resolution
+- Example:
+  ```typescript
+  class Level extends ex.Scene {
+    onInitialize(engine) {
+      const player = new Player();
+      this.add(player);
+    }
+  }
+  ```
+
+### Actor
+- Primary game object with position, graphics, physics
+- Creation: `new ex.Actor({pos: ex.vec(x, y), width, height})`
+- Lifecycle: onInitialize, onPreUpdate, onPostUpdate
+- Graphics: `actor.graphics.use(sprite/animation)`
+- Physics: `actor.body`, `actor.collider`
+- Events: `actor.on('eventName', handler)`
+- Actions: `actor.actions.moveTo(), .delay(), .repeat(), etc.`
+- Add to scene: `scene.add(actor)` or `game.add(actor)`
+
+### Sprites and Graphics
+- ImageSource: Loads images - `new ex.ImageSource('path/to/image.png')`
+- Sprite: View into image - `imageSource.toSprite()` or `new ex.Sprite({image, sourceView, destSize})`
+- SpriteSheet: Collection from same image - `ex.SpriteSheet.fromImageSource({image, grid: {rows, columns, spriteWidth, spriteHeight}})`
+- Animation: Series of frames - `ex.Animation.fromSpriteSheet(spriteSheet, frameIndices, durationPerFrame)`
+- Other graphics: Rectangle, Circle, Polygon, Line, Text, Canvas, GraphicsGroup
+
+### Input
+- Keyboard: `engine.input.keyboard.isHeld(ex.Keys.Space)`
+- Pointers (mouse/touch): `engine.input.pointers.primary.pos`
+- Gamepad: `engine.input.gamepads.at(0)`
+- Events: `engine.input.keyboard.on('press', handler)`
+
+### Collision
+- Colliders: CircleCollider, PolygonCollider, EdgeCollider, CompositeCollider
+- Types: Active, Fixed, Passive, PreventCollision
+- Events: 'collisionstart', 'collisionend', 'precollision', 'postcollision'
+- Groups: For filtering collisions
+
+### Resources and Loading
+- Resource types: ImageSource, Sound, FontSource
+- Loader: `const loader = new ex.Loader([resource1, resource2])`
+- Usage: `game.start(loader).then(() => { /* game loaded */ })`
+
+### Actions
+- Sequence actions: `actor.actions.moveTo().delay().moveBy()`
+- Repeating: `actor.actions.repeat(ctx => {}, times)` or `repeatForever()`
+- Types: moveTo, moveBy, rotateBy, scaleTo, fade, blink, die, follow, etc.
+
+### Other Features
+- Camera controls: `scene.camera.strategy.lockToActor(player)`
+- TileMaps: For tile-based games
+- Particles: Using ParticleEmitter
+- Timer: `new ex.Timer({fcn, interval, repeats})`
+- Coroutines: `ex.coroutine(engine, function*() {})`
+- Vector math: `ex.vec(x, y)` for positions and calculations
+- Random: `new ex.Random(seed)` for deterministic randomness
+
+## Setup and Project Structure
+
+### Quick Start
+```typescript
+import * as ex from 'excalibur';
+
+// Create game
+const game = new ex.Engine({
+  width: 800,
+  height: 600,
+  backgroundColor: ex.Color.fromHex('#54C0CA')
+});
+
+// Create and add an actor
+const player = new ex.Actor({
+  pos: ex.vec(400, 300),
+  width: 50,
+  height: 50,
+  color: ex.Color.Red
+});
+game.add(player);
+
+// Start the game
+game.start();
+```
+
+### Recommended Project Structure
+```
+game/
+  images/
+    image1.png
+  sounds/
+    sound1.mp3
+  src/
+    main.ts       // Entry point
+    level1.ts     // Game scenes
+    level2.ts
+    config.ts     // Constants and configuration
+    resources.ts  // All game resources
+```
+
+### Resources Pattern
+```typescript
+// resources.ts
+export const Resources = {
+  ImagePlayer: new ex.ImageSource('./images/player.png'),
+  SoundJump: new ex.Sound('./sounds/jump.mp3')
+} as const;
+
+// main.ts
+const loader = new ex.Loader(Object.values(Resources));
+game.start(loader).then(() => {
+  // Game loaded
+});
+```
+
+## Best Practices
+1. Use `onInitialize()` instead of constructors for setup
+2. Create a config.ts file for constants and tweakable values
+3. Create a resources.ts for all game assets
+4. Prefer composition over inheritance when designing game objects
+5. Use ex.Scene as a composition root to assemble game components
+6. Separate reusable logic into components
+
+## Common Patterns
+1. Player controller with input handling
+2. Camera following player
+3. Collision detection and response
+4. Level loading from map editors (Tiled, LDtk)
+5. UI elements for score, health, etc.
+6. Game state management
+
+## Plugins
+- Tiled: Map editor integration (@excaliburjs/plugin-tiled)
+- LDtk: Level editor integration (@excaliburjs/plugin-ldtk)
+- Aseprite: Sprite editor integration (@excaliburjs/plugin-aseprite)
+- SpriteFusion: Tile map editor (@excaliburjs/plugin-spritefusion)
+
+## Debugging
+- Chrome/Firefox extensions for Excalibur debugging
+- Toggle debug mode: `game.toggleDebug()`
+- Debug drawing: `ex.Debug.drawLine(), .drawCircle(), etc.`

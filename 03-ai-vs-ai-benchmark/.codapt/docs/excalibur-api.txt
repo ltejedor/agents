@@ -1,0 +1,553 @@
+# Excalibur.js API Cheatsheet
+
+## Engine
+```typescript
+// Creation
+const game = new ex.Engine({
+  width: 800,                             // Canvas width
+  height: 600,                            // Canvas height
+  canvasElementId: 'game',                // Optional, ID for existing canvas
+  backgroundColor: ex.Color.Black,        // Background color
+  displayMode: ex.DisplayMode.FitScreen,  // FitScreen, FitContainer, Fixed, etc.
+  pixelArt: true,                         // Optimizes for pixel art games
+  pixelRatio: 1,                          // Pixel scaling
+  antialiasing: false,                    // Disables anti-aliasing for crisp pixels
+  maxFps: 60,                             // Caps framerate
+  fixedUpdateFps: 60                      // Physics update rate
+});
+
+// Methods
+game.start();                       // Start with no loader
+game.start(loader);                 // Start with resources to load
+game.stop();                        // Stop the game
+game.add(actor);                    // Add to default scene
+game.add('level1', new Level1());   // Register scene
+game.goToScene('level1');           // Switch to scene
+game.removeScene('level1');         // Remove scene
+game.toggleDebug();                 // Enable debug visuals
+
+// Properties
+game.debug                    // Debug settings
+game.currentScene             // Current active scene
+game.graphicsContext          // Rendering context
+game.clock                    // Game clock
+game.browser                  // Browser capabilities
+game.screen                   // Screen information and utilities
+game.input                    // Input manager (keyboard, pointers, etc.)
+game.physics                  // Physics settings and configuration
+```
+
+## Scene
+```typescript
+// Creation
+class MyScene extends ex.Scene {
+  onInitialize(engine) { /* setup */ }
+  onActivate() { /* when scene becomes active */ }
+  onDeactivate() { /* when scene becomes inactive */ }
+  onPreUpdate(engine, delta) { /* before physics */ }
+  onPostUpdate(engine, delta) { /* after physics */ }
+}
+
+// Methods
+scene.add(entity);            // Add an entity to the scene
+scene.remove(entity);         // Remove an entity from scene
+scene.clear();                // Remove all entities
+```
+
+## Actor
+```typescript
+// Creation
+const actor = new ex.Actor({
+  name: 'player',                   // Optional name
+  pos: ex.vec(100, 100),            // Position (x,y)
+  vel: ex.vec(0, 0),                // Velocity (x,y)
+  acc: ex.vec(0, 0),                // Acceleration (x,y)
+  width: 100,                       // Width
+  height: 100,                      // Height
+  radius: 50,                       // For circular actors (alternative to w/h)
+  color: ex.Color.Red,              // Fill color
+  rotation: 0,                      // Rotation in radians
+  scale: ex.vec(1, 1),              // Scale
+  z: 0,                             // Z-index (drawing order)
+  anchor: ex.vec(0.5, 0.5),         // Pivot point (0,0=top-left, 1,1=bottom-right)
+  visible: true,                    // Visibility
+  collisionType: ex.CollisionType.Active  // Physics behavior
+});
+
+// Lifecycle hooks
+actor.onInitialize(engine);          // First update
+actor.onPreUpdate(engine, delta);    // Before physics
+actor.onPostUpdate(engine, delta);   // After physics
+
+// Events
+actor.on('collisionstart', handler);
+actor.on('collisionend', handler);
+actor.on('precollision', handler);
+actor.on('postcollision', handler);
+actor.on('pointerdown', handler);
+actor.on('pointerup', handler);
+actor.on('pointermove', handler);
+actor.on('pointerenter', handler);
+actor.on('pointerleave', handler);
+actor.on('pointercancel', handler);
+actor.on('postupdate', handler);
+actor.on('preupdate', handler);
+actor.once('eventname', handler);    // One-time event
+
+// Child management
+actor.addChild(childActor);
+actor.removeChild(childActor);
+```
+
+## Graphics
+```typescript
+// Using graphics
+actor.graphics.use(sprite);                    // Use a specific graphic
+actor.graphics.add('idle', idleAnimation);     // Add named graphic
+actor.graphics.add('run', runAnimation);
+actor.graphics.show('run');                    // Switch to named graphic
+
+// Create sprite from image
+const sprite = Resources.Player.toSprite();
+// or
+const sprite = new ex.Sprite({
+  image: Resources.Player,
+  sourceView: {x: 0, y: 0, width: 32, height: 32}, // Optional source rect
+  destSize: {width: 64, height: 64}                // Optional destination size
+});
+
+// Create animation
+const animation = new ex.Animation({
+  frames: [
+    {graphic: sprite1, duration: 200},
+    {graphic: sprite2, duration: 200}
+  ],
+  strategy: ex.AnimationStrategy.Loop // Loop, PingPong, Freeze, End
+});
+
+// Create animation from spritesheet
+const runAnim = ex.Animation.fromSpriteSheet(
+  spriteSheet,      // SpriteSheet
+  [0, 1, 2, 3],     // Frame indices
+  200,              // Duration per frame (ms)
+  ex.AnimationStrategy.Loop // Animation strategy
+);
+```
+
+## SpriteSheet
+```typescript
+// Creation
+const spriteSheet = ex.SpriteSheet.fromImageSource({
+  image: Resources.PlayerSheet,
+  grid: {
+    rows: 4,
+    columns: 5,
+    spriteWidth: 32,
+    spriteHeight: 32
+  },
+  spacing: {
+    margin: {x: 1, y: 1},        // Optional: margin around sprites
+    originOffset: {x: 0, y: 0}   // Optional: offset from top-left
+  }
+});
+
+// Get sprite at location
+const sprite = spriteSheet.getSprite(column, row);
+// or
+const sprite = spriteSheet.getSprite(index); // Row-major index
+```
+
+## Input
+```typescript
+// Keyboard
+if (engine.input.keyboard.isHeld(ex.Keys.W)) { /* move up */ }
+if (engine.input.keyboard.wasPressed(ex.Keys.Space)) { /* jump */ }
+if (engine.input.keyboard.wasReleased(ex.Keys.E)) { /* stop action */ }
+
+// Mouse/Touch (Pointers)
+const mousePos = engine.input.pointers.primary.pos;
+const worldPos = engine.screen.screenToWorldCoordinates(mousePos);
+if (engine.input.pointers.primary.isDown) { /* click/tap */ }
+
+// Events
+engine.input.keyboard.on('press', (evt) => {
+  if (evt.key === ex.Keys.Enter) { /* start game */ }
+});
+
+engine.input.pointers.primary.on('down', (evt) => {
+  /* handle click/tap at evt.pos */
+});
+```
+
+## Physics
+```typescript
+// Global physics configuration
+ex.Physics.useArcadePhysics(); // Simple physics (default)
+ex.Physics.useRealisticPhysics(); // More accurate physics
+ex.Physics.gravity = ex.vec(0, 800); // Set gravity
+
+// Body properties
+actor.body.collisionType = ex.CollisionType.Active; // Active, Fixed, Passive
+actor.body.mass = 2;
+actor.body.bounciness = 0.2;
+actor.body.friction = 0.5;
+
+// Colliders
+actor.collider.set(ex.Shape.Circle(20)); // Set circle collider
+actor.collider.set(ex.Shape.Box(100, 50)); // Set box collider
+actor.collider.set(new ex.PolygonCollider({
+  points: [ex.vec(0, 0), ex.vec(50, 0), ex.vec(25, 50)]
+})); // Set polygon collider
+
+// Collision filtering
+const playerGroup = ex.CollisionGroupManager.create('player');
+const enemyGroup = ex.CollisionGroupManager.create('enemy');
+player.body.collisionGroup = playerGroup;
+player.body.group = ex.CollisionGroup.collidesWith([enemyGroup]);
+```
+
+## Color
+```typescript
+// Color creation
+ex.Color.Red
+ex.Color.Blue
+ex.Color.Green
+ex.Color.White
+ex.Color.Black
+ex.Color.Transparent
+
+// Custom colors
+ex.Color.fromRGB(255, 0, 0);           // Red color
+ex.Color.fromRGBA(255, 0, 0, 0.5);     // Semi-transparent red
+ex.Color.fromHex('#FF0000');           // Red from hex
+ex.Color.fromHSL(0, 1, 0.5);           // Red from HSL
+
+// Color operations
+const darker = color.darken(0.2);      // Darker version
+const lighter = color.lighten(0.2);    // Lighter version
+```
+
+## Actions
+```typescript
+// Basic actions
+actor.actions.moveTo(ex.vec(100, 100), 200);   // Move to position at 200px/sec
+actor.actions.moveBy(ex.vec(50, 0), 200);      // Move by offset at 200px/sec
+actor.actions.rotateTo(Math.PI, Math.PI/2);    // Rotate to angle at speed
+actor.actions.rotateBy(Math.PI/2, Math.PI/2);  // Rotate by angle at speed
+actor.actions.scaleTo(ex.vec(2, 2), ex.vec(1, 1)); // Scale to size at speed
+actor.actions.scaleBy(ex.vec(0.5, 0.5), ex.vec(1, 1)); // Scale by amount at speed
+actor.actions.fade(0.5, 1000);                 // Fade to opacity over duration
+actor.actions.delay(1000);                     // Delay next action by 1000ms
+actor.actions.blink(200, 200, 3);              // Blink: visible, invisible, count
+actor.actions.die();                           // Remove from scene
+
+// Easing
+actor.actions.easeTo(ex.vec(100, 100), 1000, ex.EasingFunctions.EaseInOutCubic);
+
+// Chaining
+actor.actions
+  .moveTo(ex.vec(100, 100), 200)
+  .delay(500)
+  .moveTo(ex.vec(0, 0), 200);
+
+// Repeating
+actor.actions.repeat((repeatCtx) => {
+  repeatCtx.moveTo(ex.vec(100, 0), 200);
+  repeatCtx.moveTo(ex.vec(0, 0), 200);
+}, 3); // Repeat 3 times
+
+actor.actions.repeatForever((repeatCtx) => {
+  repeatCtx.moveTo(ex.vec(100, 0), 200);
+  repeatCtx.moveTo(ex.vec(0, 0), 200);
+});
+
+// Clear all actions
+actor.actions.clearActions();
+```
+
+## Vector
+```typescript
+// Creation
+const v1 = ex.vec(10, 20);         // Shorthand
+const v2 = new ex.Vector(10, 20);  // Full constructor
+
+// Standard vectors
+ex.Vector.Zero      // (0, 0)
+ex.Vector.One       // (1, 1)
+ex.Vector.Half      // (0.5, 0.5)
+ex.Vector.Up        // (0, -1)
+ex.Vector.Down      // (0, 1)
+ex.Vector.Left      // (-1, 0)
+ex.Vector.Right     // (1, 0)
+
+// Operations
+v1.add(v2);          // Addition
+v1.sub(v2);          // Subtraction
+v1.scale(2);         // Scale
+v1.normalize();      // Unit vector
+v1.distance(v2);     // Distance to another vector
+v1.dot(v2);          // Dot product
+v1.cross(v2);        // Cross product
+v1.magnitude();      // Length
+v1.rotate(Math.PI);  // Rotate by radians
+```
+
+## Resource Loading
+```typescript
+// Individual resources
+const imageResource = new ex.ImageSource('./images/player.png');
+const soundResource = new ex.Sound('./sounds/explosion.wav');
+const fontResource = new ex.FontSource('./fonts/pixel.ttf', 'PixelFont');
+
+// Loading with progress
+const loader = new ex.Loader([imageResource, soundResource, fontResource]);
+loader.startButtonFactory = () => new ex.Actor(); // Optional custom load button
+loader.backgroundColor = ex.Color.Black;
+loader.loadingBarColor = ex.Color.White;
+loader.suppressPlayButton = true; // Optional suppress play button
+
+game.start(loader).then(() => {
+  // Game has loaded, initialize game logic
+  console.log("Game loaded!");
+});
+
+// Raw resource loading
+imageResource.load().then(() => {
+  // Resource loaded individually
+});
+```
+
+## Camera
+```typescript
+// Access camera
+const camera = game.currentScene.camera;
+
+// Properties
+camera.pos = ex.vec(100, 100);     // Set camera position
+camera.zoom = 2;                    // Set zoom level
+
+// Follow strategies
+camera.strategy.lockToActor(player);                        // Lock to actor
+camera.strategy.elasticToActor(player, 0.2, 0.1);           // Smooth follow
+camera.strategy.limitCameraBounds(new ex.BoundingBox(0, 0, 1000, 1000));  // Set boundaries
+camera.strategy.radiusAroundActor(player, 100);             // Keep within radius
+
+// Camera effects
+camera.shake(5, 5, 500);           // Shake(x, y, duration)
+camera.zoom = 2;                   // Zoom in
+camera.move(ex.vec(100, 100), 500, ex.EasingFunctions.EaseInOutCubic);  // Move with easing
+```
+
+## Timer
+```typescript
+// Create a timer
+const timer = new ex.Timer({
+  fcn: () => console.log("Timer fired!"),
+  interval: 1000,                // Milliseconds
+  repeats: true,                 // Whether timer repeats
+  numberOfRepeats: 5             // Number of times to repeat (if repeats is true)
+});
+
+// Start/stop timer
+timer.start();
+timer.stop();
+timer.reset();
+
+// Add timer to scene
+scene.add(timer);
+
+// One-off scheduled functions
+game.clock.schedule(() => {
+  console.log("Executed after 2 seconds");
+}, 2000);
+```
+
+## TileMap
+```typescript
+// Create a tilemap
+const tilemap = new ex.TileMap({
+  pos: ex.vec(0, 0),
+  tileWidth: 32,
+  tileHeight: 32,
+  rows: 20,
+  columns: 30
+});
+
+// Get and modify tiles
+const tile = tilemap.getTile(x, y);
+tile.solid = true;                      // Make tile solid
+tile.addGraphic(sprite);                // Add graphics to tile
+
+// Add to scene
+scene.add(tilemap);
+```
+
+## ParticleEmitter
+```typescript
+// Create particle emitter
+const emitter = new ex.ParticleEmitter({
+  pos: ex.vec(400, 300),
+  width: 10,
+  height: 10,
+  emitterType: ex.EmitterType.Circle,   // Circle, Rectangle, etc.
+  radius: 5,
+  minVel: 100,
+  maxVel: 200,
+  minAngle: 0,
+  maxAngle: Math.PI * 2,
+  isEmitting: true,
+  emitRate: 300,                        // Particles per second
+  particleLife: 1000,                   // Particle lifetime in ms
+  opacity: 0.5,
+  fadeFlag: true,                       // Fade particles over time
+  minSize: 1,
+  maxSize: 5,
+  startSize: 3,
+  endSize: 1,
+  acceleration: ex.vec(0, 80),          // Gravity or other force
+  beginColor: ex.Color.Red,
+  endColor: ex.Color.Yellow
+});
+
+// Control emission
+emitter.isEmitting = false;             // Stop emission
+emitter.emitRate = 50;                  // Change emission rate
+
+// Add to scene
+scene.add(emitter);
+```
+
+## UI Elements
+```typescript
+// Label
+const label = new ex.Label({
+  text: "Score: 0",
+  pos: ex.vec(10, 10),
+  font: new ex.Font({
+    family: 'Arial',
+    size: 24,
+    unit: ex.FontUnit.Px,
+    color: ex.Color.White,
+    bold: true,
+    textAlign: ex.TextAlign.Left
+  })
+});
+scene.add(label);
+
+// UI Actor (ScreenElement)
+const button = new ex.ScreenElement({
+  pos: ex.vec(100, 100),
+  width: 200,
+  height: 50,
+  color: ex.Color.Green
+});
+button.on('pointerdown', () => {
+  console.log("Button clicked!");
+});
+scene.add(button);
+```
+
+## Random
+```typescript
+// Create with optional seed
+const random = new ex.Random(1234);   // Seeded random
+const random2 = new ex.Random();      // Uses Date.now() as seed
+
+// Methods
+random.next();                        // Float between 0-1
+random.integer(0, 10);                // Integer between 0-10 inclusive
+random.floating(0, 10);               // Float between 0-10
+random.bool(0.3);                     // Boolean with 30% chance of true
+random.pickOne([1, 2, 3, 4]);         // Pick random element
+random.pickSet([1, 2, 3, 4], 2);      // Pick 2 unique random elements
+random.range(5, 0, 10);               // Generate 5 random integers from 0-10
+random.shuffle([1, 2, 3, 4]);         // Shuffle array
+
+// Dice helpers
+random.d4();                          // 1-4
+random.d6();                          // 1-6
+random.d8();                          // 1-8
+random.d10();                         // 1-10
+random.d12();                         // 1-12
+random.d20();                         // 1-20
+```
+
+## Triggers
+```typescript
+// Create a trigger
+const trigger = new ex.Trigger({
+  pos: ex.vec(100, 100),
+  width: 100,
+  height: 100,
+  target: player,                   // Optional specific target
+  repeat: -1,                       // -1 for infinite, or number of times
+  action: () => {
+    console.log("Trigger activated!");
+  }
+});
+
+// Custom filter
+const trigger2 = new ex.Trigger({
+  pos: ex.vec(200, 200),
+  width: 100,
+  height: 100,
+  filter: (actor) => {
+    return actor.name === "player" && someGameState;
+  },
+  action: () => {
+    console.log("Filtered trigger activated!");
+  }
+});
+
+scene.add(trigger);
+```
+
+## Collision Groups
+```typescript
+// Define collision groups
+const PlayerGroup = ex.CollisionGroupManager.create('player');
+const EnemyGroup = ex.CollisionGroupManager.create('enemy');
+const BulletGroup = ex.CollisionGroupManager.create('bullet');
+const CollectibleGroup = ex.CollisionGroupManager.create('collectible');
+
+// Configure which groups collide with each other
+player.body.collisionGroup = PlayerGroup;
+player.body.group = ex.CollisionGroup.collidesWith([EnemyGroup, CollectibleGroup]);
+
+enemy.body.collisionGroup = EnemyGroup;
+enemy.body.group = ex.CollisionGroup.collidesWith([PlayerGroup, BulletGroup]);
+
+bullet.body.collisionGroup = BulletGroup;
+bullet.body.group = ex.CollisionGroup.collidesWith([EnemyGroup]);
+
+collectible.body.collisionGroup = CollectibleGroup;
+collectible.body.group = ex.CollisionGroup.collidesWith([PlayerGroup]);
+```
+
+## Debugging
+```typescript
+// Toggle debug visuals
+game.toggleDebug();
+
+// Debug settings
+game.debug.entity.showId = true;
+game.debug.entity.showName = true;
+game.debug.collider.showGeometry = true;
+game.debug.collider.showBounds = true;
+game.debug.transform.showPosition = true;
+game.debug.transform.showZIndex = true;
+
+// Debug drawing
+ex.Debug.drawLine(ex.vec(0, 0), ex.vec(100, 100), ex.Color.Red);
+ex.Debug.drawCircle(ex.vec(100, 100), 50, ex.Color.Blue);
+ex.Debug.drawRectangle(ex.vec(100, 100), 50, 50, ex.Color.Green);
+ex.Debug.drawPoint(ex.vec(100, 100), 5, ex.Color.Yellow);
+
+// Test clock for deterministic testing
+const testClock = game.debug.useTestClock();
+testClock.step(16.6);  // Step a single frame (at 60fps)
+testClock.run(10, 16.6);  // Run 10 frames
+
+// Return to standard clock
+game.debug.useStandardClock();
+```

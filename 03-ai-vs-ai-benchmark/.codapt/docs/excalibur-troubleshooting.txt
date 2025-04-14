@@ -1,0 +1,779 @@
+# Excalibur.js Troubleshooting Guide
+
+## Common Issues and Solutions
+
+### Actor Not Appearing on Screen
+
+**Symptoms**: Actor is created but not visible in the game.
+
+**Possible Causes and Solutions**:
+
+1. **Not added to a scene**:
+   ```typescript
+   // Make sure to add the actor to the current scene
+   game.add(actor); // or scene.add(actor)
+   ```
+
+2. **Position outside viewport**:
+   ```typescript
+   // Check actor position
+   console.log(actor.pos.toString());
+   // Reset to center of screen
+   actor.pos = game.screen.center;
+   ```
+
+3. **Graphics not set**:
+   ```typescript
+   // Make sure to set graphics
+   actor.graphics.use(sprite);
+   // Or set a color for visibility
+   actor.color = ex.Color.Red;
+   ```
+
+4. **Z-index issue**:
+   ```typescript
+   // Ensure z-index is appropriate
+   actor.z = 10; // Higher values draw on top
+   ```
+
+5. **Killed or deactivated**:
+   ```typescript
+   // Check if actor is active
+   console.log(actor.active);
+   // Reactivate if needed
+   if (!actor.active) {
+     scene.add(actor);
+   }
+   ```
+
+### Collision Not Working
+
+**Symptoms**: Actors pass through each other without colliding.
+
+**Possible Causes and Solutions**:
+
+1. **CollisionType not set**:
+   ```typescript
+   // Set appropriate collision type
+   actor.body.collisionType = ex.CollisionType.Active;
+   ground.body.collisionType = ex.CollisionType.Fixed;
+   ```
+
+2. **Collision groups not set up properly**:
+   ```typescript
+   // Check collision groups
+   console.log(actor.body.group.name);
+   
+   // Ensure groups collide with each other
+   player.body.group = ex.CollisionGroup.collidesWith([EnemyGroup]);
+   ```
+
+3. **No collider**:
+   ```typescript
+   // Check if collider exists
+   console.log(actor.collider.bounds);
+   
+   // Set an explicit collider if needed
+   actor.collider.set(ex.Shape.Box(width, height));
+   actor.collider.set(ex.Shape.Circle(radius));
+   ```
+
+4. **Trigger vs. Collision**:
+   ```typescript
+   // Make sure you're not using a trigger when you need a collision
+   if (actor instanceof ex.Trigger) {
+     console.warn("Using a Trigger instead of an Actor with collision");
+   }
+   ```
+
+### Slow Performance
+
+**Symptoms**: Game runs at low FPS or stutters.
+
+**Possible Causes and Solutions**:
+
+1. **Too many actors**:
+   ```typescript
+   // Check actor count
+   console.log(game.currentScene.actors.length);
+   
+   // Implement object pooling for frequently created/destroyed objects
+   // Or implement culling for off-screen objects
+   ```
+
+2. **Heavy graphics operations**:
+   ```typescript
+   // Avoid creating new graphics every frame
+   // Cache graphics and reuse them
+   
+   // Use sprite atlases instead of individual images
+   const spriteSheet = ex.SpriteSheet.fromImageSource({...});
+   ```
+
+3. **Physics complexity**:
+   ```typescript
+   // Simplify colliders where possible
+   // Use ex.Shape.Box instead of complex polygons
+   
+   // Adjust physics settings
+   ex.Physics.acc = ex.vec(0, 500); // Lower gravity
+   ex.Physics.bodiesCanSleepByDefault = true; // Enable sleeping
+   ```
+
+4. **Debugging overhead**:
+   ```typescript
+   // Make sure debug mode is off in production
+   if (game.debug.enabled) {
+     game.debug.enabled = false;
+   }
+   ```
+
+5. **Check WebGL issues**:
+   ```typescript
+   // Check if WebGL is enabled or falling back to Canvas
+   console.log(game.graphicsContext.renderer.constructor.name);
+   
+   // Force WebGL mode
+   const game = new ex.Engine({
+     suppressPlayButton: true,
+     configurePerformanceCanvas2DFallback: {
+       allow: false // Disable Canvas fallback
+     }
+   });
+   ```
+
+### Input Not Responding
+
+**Symptoms**: Game doesn't respond to keyboard, mouse, or touch inputs.
+
+**Possible Causes and Solutions**:
+
+1. **Game paused or focus issues**:
+   ```typescript
+   // Check if game is running
+   console.log(game.clock.isRunning());
+   
+   // Ensure game has focus - add this code if inputs only work after clicking
+   window.addEventListener('click', () => {
+     window.focus();
+   });
+   ```
+
+2. **Input checking in wrong place**:
+   ```typescript
+   // Move input checks to onPreUpdate
+   actor.onPreUpdate = (engine) => {
+     if (engine.input.keyboard.isHeld(ex.Keys.Right)) {
+       // Handle input
+     }
+   };
+   ```
+
+3. **Pointer events not enabled**:
+   ```typescript
+   // Make sure actor has pointer component for events
+   if (!actor.get(ex.PointerComponent)) {
+     actor.addComponent(new ex.PointerComponent());
+   }
+   ```
+
+4. **Event listeners not attached**:
+   ```typescript
+   // Check if you're binding events correctly
+   actor.on('pointerdown', () => {
+     console.log('Clicked!');
+   });
+   ```
+
+### Camera Issues
+
+**Symptoms**: Camera not following player, or strange camera behavior.
+
+**Possible Causes and Solutions**:
+
+1. **Camera strategy not set**:
+   ```typescript
+   // Set camera to follow player
+   scene.camera.strategy.lockToActor(player);
+   
+   // Or use elastic follow for smoother movement
+   scene.camera.strategy.elasticToActor(player, 0.2, 0.1);
+   ```
+
+2. **Camera bounds issues**:
+   ```typescript
+   // Check camera position
+   console.log(scene.camera.pos.toString());
+   
+   // Set or clear camera bounds
+   scene.camera.strategy.limitCameraBounds(
+     new ex.BoundingBox(0, 0, 2000, 1000)
+   );
+   // Or clear limits
+   scene.camera.strategy.clearCameraBounds();
+   ```
+
+3. **Coordinate plane mismatch**:
+   ```typescript
+   // Check if using Screen coordinates instead of World
+   if (actor.coordPlane === ex.CoordPlane.Screen) {
+     console.warn("Actor is in screen coordinates, not world coordinates");
+     actor.coordPlane = ex.CoordPlane.World;
+   }
+   ```
+
+### Resource Loading Issues
+
+**Symptoms**: Images or sounds fail to load, or game starts before resources are ready.
+
+**Possible Causes and Solutions**:
+
+1. **Path issues**:
+   ```typescript
+   // Check file paths
+   console.log(Resources.PlayerImage.path);
+   
+   // Use relative paths correctly
+   const image = new ex.ImageSource('./images/player.png');
+   ```
+
+2. **Not waiting for loader**:
+   ```typescript
+   // Make sure to wait for loader to complete
+   const loader = new ex.Loader([...resources]);
+   game.start(loader).then(() => {
+     // Initialize game here after resources are loaded
+     console.log("All resources loaded!");
+   });
+   ```
+
+3. **CORS issues**:
+   ```typescript
+   // Check console for CORS errors
+   // Ensure server properly serves assets with CORS headers
+   // Or host assets on the same domain
+   ```
+
+4. **Trying to use resources before loaded**:
+   ```typescript
+   // Check if resources are loaded before using
+   if (imageResource.isLoaded()) {
+     const sprite = imageResource.toSprite();
+   } else {
+     console.error("Resource not loaded yet!");
+   }
+   ```
+
+### Animation Issues
+
+**Symptoms**: Animations not playing, or playing incorrectly.
+
+**Possible Causes and Solutions**:
+
+1. **Animation not added to graphics**:
+   ```typescript
+   // Make sure to add and use the animation
+   actor.graphics.add('run', runAnimation);
+   actor.graphics.use('run');
+   ```
+
+2. **Frame issues**:
+   ```typescript
+   // Check animation frames
+   console.log(animation.frames.length);
+   
+   // Make sure frames were created correctly
+   const animation = ex.Animation.fromSpriteSheet(
+     spriteSheet,
+     [0, 1, 2, 3], // Make sure frame indices exist
+     200 // Duration per frame in ms
+   );
+   ```
+
+3. **Animation strategy**:
+   ```typescript
+   // Use appropriate animation strategy
+   const animation = ex.Animation.fromSpriteSheet(
+     spriteSheet,
+     [0, 1, 2, 3],
+     200,
+     ex.AnimationStrategy.Loop // Instead of End, Freeze, etc.
+   );
+   ```
+
+### Physics Behavior Issues
+
+**Symptoms**: Objects moving too fast, floating, or other strange physics behavior.
+
+**Possible Causes and Solutions**:
+
+1. **Velocity/Acceleration too high**:
+   ```typescript
+   // Check and limit velocity
+   console.log(actor.vel.toString());
+   actor.vel = actor.vel.clamp(
+     ex.vec(-maxSpeed, -maxSpeed),
+     ex.vec(maxSpeed, maxSpeed)
+   );
+   ```
+
+2. **Time step issues**:
+   ```typescript
+   // Use fixed update for more stable physics
+   const game = new ex.Engine({
+     fixedUpdateFps: 60 // Use consistent physics update rate
+   });
+   ```
+
+3. **Collision type mismatch**:
+   ```typescript
+   // Check collision types
+   console.log(actor.body.collisionType);
+   console.log(ground.body.collisionType);
+   
+   // Ensure proper setup
+   actor.body.collisionType = ex.CollisionType.Active;
+   ground.body.collisionType = ex.CollisionType.Fixed;
+   ```
+
+4. **Mass, friction or restitution issues**:
+   ```typescript
+   // Adjust physics properties
+   actor.body.mass = 1;
+   actor.body.friction = 0.2;
+   actor.body.bounciness = 0.1;
+   ```
+
+## Debugging Tools
+
+### Browser Console
+
+Use `console.log()` liberally to debug your game state:
+
+```typescript
+// Log actor position each frame
+actor.on('postupdate', () => {
+  console.log(`Actor pos: ${actor.pos.toString()}`);
+});
+
+// Log collision events
+actor.on('collisionstart', (evt) => {
+  console.log(`Collision with: ${evt.other.constructor.name}`);
+});
+```
+
+### Excalibur Debug Mode
+
+Toggle debug visualization to see colliders, positions, and more:
+
+```typescript
+// Turn on debug visualization
+game.toggleDebug();
+
+// Configure what's shown
+game.debug.entity.showName = true;
+game.debug.entity.showId = true;
+game.debug.collider.showGeometry = true;
+game.debug.transform.showPosition = true;
+```
+
+### Excalibur Browser Extensions
+
+Use the official debugging extensions for Chrome and Firefox:
+
+```typescript
+// Add useful names to make debugging easier
+actor.name = 'Player';
+enemy.name = 'Enemy';
+
+// Extensions show names, positions, and performance metrics
+```
+
+### TestClock for Deterministic Testing
+
+Use the test clock for step-by-step debugging:
+
+```typescript
+// Use test clock
+const testClock = game.debug.useTestClock();
+
+// Step a single frame
+testClock.step(16.6); // Approx one frame at 60fps
+
+// Run multiple steps
+testClock.run(10, 16.6); // Run 10 frames
+
+// Go back to normal clock
+game.debug.useStandardClock();
+```
+
+### Debug Drawing
+
+Draw debug visuals to understand your game behavior:
+
+```typescript
+actor.onPostDraw = (ctx) => {
+  // Draw sight line
+  ex.Debug.drawLine(
+    actor.pos,
+    actor.pos.add(actor.vel.normalize().scale(100)),
+    ex.Color.Red
+  );
+  
+  // Draw detection radius
+  ex.Debug.drawCircle(
+    actor.pos,
+    detectionRadius,
+    ex.Color.Yellow.transparent()
+  );
+};
+```
+
+## Performance Optimization Tips
+
+1. **Use object pooling** for frequently created and destroyed objects:
+   ```typescript
+   // Create object pool for bullets, particles, etc.
+   ```
+
+2. **Limit draw calls** by using sprite sheets instead of individual images:
+   ```typescript
+   // Use sprite sheets
+   const spriteSheet = ex.SpriteSheet.fromImageSource({...});
+   ```
+
+3. **Optimize collision detection** by using appropriate collision types and groups:
+   ```typescript
+   // Group similar actors
+   // Only check collisions between relevant groups
+   ```
+
+4. **Use culling** for off-screen objects:
+   ```typescript
+   // Disable updates for off-screen actors
+   if (!actor.isOnScreen) {
+     // Skip expensive calculations
+   }
+   ```
+
+5. **Minimize dynamic object creation** during gameplay:
+   ```typescript
+   // Reuse vectors instead of creating new ones
+   const tempVec = ex.vec(0, 0);
+   // Later...
+   tempVec.x = 100;
+   tempVec.y = 200;
+   // Use tempVec instead of new ex.Vector(100, 200)
+   ```
+
+6. **Cache graphics** instead of recreating them every frame:
+   ```typescript
+   // Create once
+   const circleGraphic = new ex.Circle({
+     radius: 10,
+     color: ex.Color.Red
+   });
+   
+   // Reuse in multiple places
+   actor1.graphics.use(circleGraphic);
+   actor2.graphics.use(circleGraphic);
+   ```
+
+7. **Use Fixed Update** for consistent physics:
+   ```typescript
+   const game = new ex.Engine({
+     fixedUpdateFps: 60
+   });
+   ```
+
+8. **Enable body sleeping** to reduce physics calculations:
+   ```typescript
+   ex.Physics.bodiesCanSleepByDefault = true;
+   ex.Physics.sleepEpsilon = 0.1; // Adjust sensitivity
+   ```
+
+9. **Profile your game** using browser tools:
+   - Use Chrome/Firefox Performance tab to identify bottlenecks
+   - Look for long-running functions or frequent garbage collection
+
+10. **Lower sprite/texture resolution** for mobile:
+    ```typescript
+    // Use different asset sets for different platforms
+    const isMobile = /Android|webOS|iPhone|iPad|iPod/.test(navigator.userAgent);
+    const resourcePath = isMobile ? './images/low-res/' : './images/high-res/';
+    ```
+
+## Browser Compatibility Issues
+
+### WebGL Support
+
+If your game has WebGL issues:
+
+1. **Check for WebGL fallback messages** in the console
+
+2. **Configure the Canvas2D fallback**:
+   ```typescript
+   const game = new ex.Engine({
+     configurePerformanceCanvas2DFallback: {
+       allow: true,
+       showPlayerMessage: true,
+       threshold: { fps: 20, numberOfFrames: 100 }
+     }
+   });
+   ```
+
+3. **Listen for fallback events**:
+   ```typescript
+   game.on('fallbackgraphicscontext', (ctx) => {
+     console.log('Falling back to Canvas2D renderer');
+     // Adjust game settings for Canvas2D
+   });
+   ```
+
+4. **Check if running in hardware accelerated mode**:
+   - Chrome: visit `chrome://gpu` to check WebGL status
+   - Firefox: check `about:support` under "Graphics"
+
+### Mobile-Specific Issues
+
+1. **Touch input not working**:
+   ```typescript
+   // Ensure pointers are being used not mouse-specific events
+   actor.on('pointerdown', (evt) => { /* works on touch and mouse */ });
+   
+   // Check viewport setup for mobile
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   ```
+
+2. **Performance on mobile**:
+   ```typescript
+   // Detect mobile and reduce effects
+   if (/Android|webOS|iPhone|iPad|iPod/.test(navigator.userAgent)) {
+     // Reduce particle count
+     emitter.emitRate /= 2;
+     
+     // Use simpler colliders
+     actor.collider.set(ex.Shape.Box(width, height));
+     
+     // Limit number of actors
+     maxEnemies = 5; // Instead of 10
+   }
+   ```
+
+3. **Audio not playing on mobile**:
+   ```typescript
+   // Audio needs user interaction to start on mobile
+   document.addEventListener('touchstart', () => {
+     // Start background music after user interaction
+     backgroundMusic.play();
+   }, { once: true });
+   ```
+
+## Common Error Messages and Fixes
+
+### "Cannot read property 'x' of undefined"
+
+**Cause**: Trying to access a property on an object that doesn't exist yet.
+
+**Fix**:
+```typescript
+// Check if object exists before accessing properties
+if (actor && actor.pos) {
+  console.log(actor.pos.x);
+}
+
+// Or use optional chaining (with TypeScript 3.7+)
+console.log(actor?.pos?.x);
+```
+
+### "Cannot set property 'graphics' of null"
+
+**Cause**: Actor or entity hasn't been properly initialized.
+
+**Fix**:
+```typescript
+// Make sure actor is created before setting properties
+const actor = new ex.Actor({
+  pos: ex.vec(100, 100)
+});
+
+// Then set properties
+if (actor) {
+  actor.graphics.use(sprite);
+}
+```
+
+### "Uncaught TypeError: Failed to execute 'drawImage' on 'CanvasRenderingContext2D'"
+
+**Cause**: Trying to draw an image before it's loaded.
+
+**Fix**:
+```typescript
+// Make sure all resources are loaded before using
+game.start(loader).then(() => {
+  // Now it's safe to use resources
+  actor.graphics.use(Resources.PlayerImage.toSprite());
+});
+
+// Or check individually
+if (imageSource.isLoaded()) {
+  actor.graphics.use(imageSource.toSprite());
+}
+```
+
+### "Uncaught DOMException: Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported"
+
+**Cause**: CORS issues with images loaded from another domain.
+
+**Fix**:
+```typescript
+// Add crossOrigin attribute
+const image = new ex.ImageSource('https://other-domain.com/image.png', 
+  true, // Enable cross-origin
+  ex.ImageFiltering.Blended); // Optional filtering
+```
+
+## Advanced Debugging Techniques
+
+### Scene Inspection
+
+Dump the entire scene structure to examine what's happening:
+
+```typescript
+function inspectScene(scene) {
+  console.log(`Scene: ${scene.constructor.name}`);
+  console.log(`Camera: ${scene.camera.pos.toString()}, Zoom: ${scene.camera.zoom}`);
+  console.log(`Actors: ${scene.actors.length}`);
+  
+  scene.actors.forEach((actor, index) => {
+    console.log(`[${index}] ${actor.name || actor.constructor.name} 
+      Pos: ${actor.pos.toString()},
+      Vel: ${actor.vel.toString()},
+      Active: ${actor.active},
+      Visible: ${actor.graphics.visible},
+      CollisionType: ${actor.body?.collisionType}`);
+  });
+}
+
+// Use in game
+inspectScene(game.currentScene);
+```
+
+### Custom Debug Overlay
+
+Create your own debug HUD for game-specific debugging:
+
+```typescript
+class DebugHUD extends ex.ScreenElement {
+  constructor() {
+    super({
+      pos: ex.vec(10, 10),
+      width: 300,
+      height: 200
+    });
+  }
+  
+  onPostDraw(ctx) {
+    const metrics = [
+      `FPS: ${Math.round(this.scene.engine.clock.fpsSampler.fps)}`,
+      `Actors: ${this.scene.actors.length}`,
+      `Player Pos: ${player.pos.toString()}`,
+      `Player Vel: ${player.vel.toString()}`,
+      `Enemies: ${enemyManager.enemies.length}`,
+      `Memory: ${Math.round(performance.memory?.usedJSHeapSize / 1024 / 1024) || 'N/A'} MB`
+    ];
+    
+    ctx.save();
+    ctx.setFillColor(ex.Color.Black.transparent(0.7));
+    ctx.fillRect(0, 0, 300, metrics.length * 20 + 10);
+    
+    ctx.setFillColor(ex.Color.White);
+    metrics.forEach((text, i) => {
+      ctx.fillText(text, 5, i * 20 + 20);
+    });
+    ctx.restore();
+  }
+}
+
+// Add to scene
+const debugHUD = new DebugHUD();
+scene.add(debugHUD);
+```
+
+### Pause and Step-by-Step Debugging
+
+Create a debug control to pause and step through the game:
+
+```typescript
+class DebugControls {
+  private _isPaused = false;
+  private game: ex.Engine;
+  
+  constructor(game: ex.Engine) {
+    this.game = game;
+    
+    // Add keyboard shortcuts
+    game.input.keyboard.on('press', (evt) => {
+      if (evt.key === ex.Keys.F10) {
+        this.togglePause();
+      }
+      if (evt.key === ex.Keys.F11) {
+        this.step();
+      }
+    });
+  }
+  
+  togglePause() {
+    this._isPaused = !this._isPaused;
+    
+    if (this._isPaused) {
+      this.game.clock.stop();
+      console.log('[DEBUG] Game paused. Press F11 to step.');
+    } else {
+      this.game.clock.start();
+      console.log('[DEBUG] Game resumed.');
+    }
+  }
+  
+  step() {
+    if (this._isPaused) {
+      // Use test clock for single step
+      const testClock = this.game.debug.useTestClock();
+      testClock.step(16.6); // One frame at 60fps
+      console.log('[DEBUG] Stepped one frame.');
+    }
+  }
+}
+
+// Use in game
+const debugControls = new DebugControls(game);
+```
+
+## Appendix: Common Constants and Magic Values
+
+For reference, here are some common values used in Excalibur games:
+
+```typescript
+// Common physics values
+const Gravity = 800; // Pixels per second squared, similar to 9.8 m/s²
+const PlayerSpeed = 200; // Pixels per second
+const JumpForce = 500; // Negative y velocity for jumps
+const TerminalVelocity = 700; // Maximum falling speed
+const GroundFriction = 0.2; // Friction coefficient for ground
+
+// Common time values
+const FrameTime = 16.6; // Milliseconds per frame at 60fps
+const OneSecond = 1000; // Milliseconds in a second
+
+// Common angles
+const DegreesToRadians = Math.PI / 180;
+const RadiansToDegrees = 180 / Math.PI;
+
+// Common screen positions
+const TopLeft = ex.vec(0, 0);
+const TopRight = ex.vec(game.screen.drawWidth, 0);
+const BottomLeft = ex.vec(0, game.screen.drawHeight);
+const BottomRight = ex.vec(game.screen.drawWidth, game.screen.drawHeight);
+const Center = ex.vec(game.screen.drawWidth / 2, game.screen.drawHeight / 2);
+```
+

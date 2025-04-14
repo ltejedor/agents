@@ -1,0 +1,1313 @@
+# Excalibur.js Common Patterns & Recipes
+
+## Resource Management
+
+### Centralized Resource Definition
+```typescript
+// resources.ts
+export const Resources = {
+  // Images
+  PlayerIdle: new ex.ImageSource('./images/player-idle.png'),
+  PlayerRun: new ex.ImageSource('./images/player-run.png'),
+  TilesetGrass: new ex.ImageSource('./images/tileset-grass.png'),
+  Background: new ex.ImageSource('./images/background.png'),
+  
+  // Audio
+  JumpSound: new ex.Sound('./sounds/jump.wav'),
+  BackgroundMusic: new ex.Sound('./sounds/music.mp3'),
+  
+  // Fonts
+  PixelFont: new ex.FontSource('./fonts/pixel.ttf', 'PixelFont')
+} as const;
+
+// In main.ts or elsewhere
+import { Resources } from './resources';
+
+const loader = new ex.Loader();
+for (const resource of Object.values(Resources)) {
+  loader.addResource(resource);
+}
+
+game.start(loader).then(() => {
+  // Game is ready with all resources loaded
+});
+```
+
+## Config Constants
+
+### Game Configuration
+```typescript
+// config.ts
+export const Config = {
+  // Game settings
+  ScreenWidth: 800,
+  ScreenHeight: 600,
+  DebugMode: false,
+  
+  // Player physics
+  PlayerSpeed: 200,
+  PlayerJumpForce: 500,
+  Gravity: 800,
+  
+  // Enemy settings
+  EnemySpeed: 100,
+  EnemySpawnRate: 3000, // ms
+  
+  // Game balance
+  ScorePerEnemy: 100,
+  StartingLives: 3,
+  
+  // Visual settings
+  BackgroundScrollSpeed: 50,
+  ParticleCount: 50
+} as const;
+
+// Usage
+import { Config } from './config';
+
+const game = new ex.Engine({
+  width: Config.ScreenWidth,
+  height: Config.ScreenHeight
+});
+
+// Player movement
+if (engine.input.keyboard.isHeld(ex.Keys.Right)) {
+  player.vel.x = Config.PlayerSpeed;
+}
+```
+
+## Player Input Controller
+
+### Basic Platform Controller
+```typescript
+class PlayerController extends ex.Actor {
+  private isGrounded = false;
+  private jumpSound: ex.Sound;
+  
+  constructor() {
+    super({
+      width: 32,
+      height: 64,
+      color: ex.Color.Blue,
+      collisionType: ex.CollisionType.Active
+    });
+    this.jumpSound = Resources.JumpSound;
+  }
+  
+  onInitialize() {
+    // Set up graphics
+    const idleSprite = Resources.PlayerIdle.toSprite();
+    const runAnimation = ex.Animation.fromSpriteSheet(
+      Resources.PlayerRun.toSpriteSheet(5, 1, 32, 32),
+      [0, 1, 2, 3, 4],
+      100
+    );
+    
+    this.graphics.add('idle', idleSprite);
+    this.graphics.add('run', runAnimation);
+    this.graphics.use('idle');
+  }
+  
+  onPreUpdate(engine) {
+    // Horizontal movement
+    if (engine.input.keyboard.isHeld(ex.Keys.Right)) {
+      this.vel.x = Config.PlayerSpeed;
+      this.graphics.use('run');
+      this.graphics.flipHorizontal = false;
+    } else if (engine.input.keyboard.isHeld(ex.Keys.Left)) {
+      this.vel.x = -Config.PlayerSpeed;
+      this.graphics.use('run');
+      this.graphics.flipHorizontal = true;
+    } else {
+      this.vel.x = 0;
+      this.graphics.use('idle');
+    }
+    
+    // Jumping
+    if (this.isGrounded && engine.input.keyboard.wasPressed(ex.Keys.Space)) {
+      this.vel.y = -Config.PlayerJumpForce;
+      this.isGrounded = false;
+      this.jumpSound.play();
+    }
+  }
+  
+  onCollisionStart(collision) {
+    if (collision.other instanceof Ground && collision.side === ex.Side.Bottom) {
+      this.isGrounded = true;
+    }
+  }
+  
+  onCollisionEnd(collision) {
+    if (collision.other instanceof Ground && collision.side === ex.Side.Bottom) {
+      this.isGrounded = false;
+    }
+  }
+}
+```
+
+### Top-Down Movement
+```typescript
+class TopDownPlayer extends ex.Actor {
+  constructor() {
+    super({
+      width: 32,
+      height: 32,
+      color: ex.Color.Red
+    });
+  }
+  
+  onPreUpdate(engine) {
+    // Reset velocity
+    this.vel.x = 0;
+    this.vel.y = 0;
+    
+    // Apply movement based on keys
+    if (engine.input.keyboard.isHeld(ex.Keys.W)) this.vel.y = -Config.PlayerSpeed;
+    if (engine.input.keyboard.isHeld(ex.Keys.S)) this.vel.y = Config.PlayerSpeed;
+    if (engine.input.keyboard.isHeld(ex.Keys.A)) this.vel.x = -Config.PlayerSpeed;
+    if (engine.input.keyboard.isHeld(ex.Keys.D)) this.vel.x = Config.PlayerSpeed;
+    
+    // Normalize diagonal movement
+    if (this.vel.x !== 0 && this.vel.y !== 0) {
+      this.vel = this.vel.normalize().scale(Config.PlayerSpeed);
+    }
+    
+    // Face direction of movement
+    if (this.vel.x !== 0 || this.vel.y !== 0) {
+      // Option 1: 4-direction facing
+      if (Math.abs(this.vel.x) > Math.abs(this.vel.y)) {
+        this.graphics.flipHorizontal = this.vel.x < 0;
+      }
+      
+      // Option 2: Rotation to face movement
+      // this.rotation = this.vel.toAngle();
+    }
+  }
+}
+```
+
+## Game State Management
+
+### Basic Game State
+```typescript
+enum GameState {
+  MainMenu,
+  Playing,
+  Paused,
+  GameOver
+}
+
+class Game {
+  private engine: ex.Engine;
+  private currentState: GameState = GameState.MainMenu;
+  private score: number = 0;
+  private lives: number = 3;
+  
+  constructor() {
+    this.engine = new ex.Engine({/* config */});
+  }
+  
+  setState(state: GameState) {
+    this.currentState = state;
+    
+    switch (state) {
+      case GameState.MainMenu:
+        this.engine.goToScene('menu');
+        break;
+      case GameState.Playing:
+        this.engine.goToScene('level');
+        break;
+      case GameState.Paused:
+        this.engine.currentScene.update = false; // Pause updates
+        this.showPauseMenu();
+        break;
+      case GameState.GameOver:
+        this.engine.goToScene('gameOver');
+        break;
+    }
+  }
+  
+  increaseScore(points: number) {
+    this.score += points;
+    // Update UI
+  }
+  
+  loseLife() {
+    this.lives--;
+    if (this.lives <= 0) {
+      this.setState(GameState.GameOver);
+    }
+  }
+  
+  restart() {
+    this.score = 0;
+    this.lives = Config.StartingLives;
+    this.setState(GameState.Playing);
+  }
+}
+
+// Usage
+const game = new Game();
+
+// Input handling for pause
+engine.input.keyboard.on('press', (evt) => {
+  if (evt.key === ex.Keys.Escape) {
+    if (game.currentState === GameState.Playing) {
+      game.setState(GameState.Paused);
+    } else if (game.currentState === GameState.Paused) {
+      game.setState(GameState.Playing);
+    }
+  }
+});
+```
+
+## Level Generation
+
+### Basic Procedural Platforms
+```typescript
+class LevelGenerator {
+  private scene: ex.Scene;
+  private levelWidth: number = 5000;
+  private groundY: number = 500;
+  
+  constructor(scene: ex.Scene) {
+    this.scene = scene;
+  }
+  
+  generateLevel() {
+    // Create base ground
+    this.createGround(0, this.levelWidth, this.groundY);
+    
+    // Create some platforms
+    const numPlatforms = 20;
+    const random = new ex.Random();
+    
+    for (let i = 0; i < numPlatforms; i++) {
+      const x = random.floating(100, this.levelWidth - 100);
+      const y = random.floating(200, this.groundY - 50);
+      const width = random.floating(50, 200);
+      
+      this.createPlatform(x, y, width, 20);
+    }
+    
+    // Add some collectibles
+    for (let i = 0; i < 10; i++) {
+      const x = random.floating(100, this.levelWidth - 100);
+      const y = random.floating(100, this.groundY - 100);
+      
+      this.createCollectible(x, y);
+    }
+    
+    // Set level bounds
+    this.scene.camera.strategy.limitCameraBounds(
+      new ex.BoundingBox(0, 0, this.levelWidth, 600)
+    );
+  }
+  
+  createGround(x: number, width: number, y: number) {
+    const ground = new ex.Actor({
+      pos: ex.vec(x + width/2, y),
+      width: width,
+      height: 20,
+      color: ex.Color.Green,
+      collisionType: ex.CollisionType.Fixed
+    });
+    this.scene.add(ground);
+    return ground;
+  }
+  
+  createPlatform(x: number, y: number, width: number, height: number) {
+    const platform = new ex.Actor({
+      pos: ex.vec(x, y),
+      width: width,
+      height: height,
+      color: ex.Color.Brown,
+      collisionType: ex.CollisionType.Fixed
+    });
+    this.scene.add(platform);
+    return platform;
+  }
+  
+  createCollectible(x: number, y: number) {
+    const collectible = new ex.Actor({
+      pos: ex.vec(x, y),
+      radius: 10,
+      color: ex.Color.Yellow,
+      collisionType: ex.CollisionType.Passive
+    });
+    
+    // Animation
+    collectible.actions.repeatForever(ctx => {
+      ctx.scaleBy(ex.vec(-0.2, -0.2), ex.vec(1, 1));
+      ctx.scaleBy(ex.vec(0.2, 0.2), ex.vec(1, 1));
+    });
+    
+    this.scene.add(collectible);
+    return collectible;
+  }
+}
+
+// Usage in scene
+class GameScene extends ex.Scene {
+  onInitialize(engine) {
+    const levelGenerator = new LevelGenerator(this);
+    levelGenerator.generateLevel();
+    
+    const player = new Player();
+    this.add(player);
+    
+    this.camera.strategy.lockToActor(player);
+  }
+}
+```
+
+## Camera Control
+
+### Advanced Camera with Boundaries
+```typescript
+class CameraController {
+  private camera: ex.Camera;
+  private target: ex.Actor;
+  private levelBounds: ex.BoundingBox;
+  private lookAheadDistance: number = 100;
+  
+  constructor(camera: ex.Camera, target: ex.Actor, levelBounds: ex.BoundingBox) {
+    this.camera = camera;
+    this.target = target;
+    this.levelBounds = levelBounds;
+    
+    // Set camera bounds
+    this.camera.strategy.limitCameraBounds(levelBounds);
+    
+    // Use elastic following
+    this.camera.strategy.elasticToActor(target, 0.2, 0.1);
+  }
+  
+  update() {
+    // Look ahead based on movement direction
+    if (Math.abs(this.target.vel.x) > 0) {
+      const lookAhead = Math.sign(this.target.vel.x) * this.lookAheadDistance;
+      const targetPos = this.target.pos.add(ex.vec(lookAhead, 0));
+      
+      // Update camera focus with elastic strategy
+      this.camera.strategy.elasticToActor(this.target, 0.2, 0.1);
+    }
+  }
+  
+  shake(intensity: number = 5, duration: number = 500) {
+    this.camera.shake(intensity, intensity, duration);
+  }
+  
+  zoomTo(level: number, duration: number = 500) {
+    const currentZoom = this.camera.zoom;
+    this.camera.zoomOverTime(level - currentZoom, duration);
+  }
+}
+
+// Usage
+const cameraController = new CameraController(
+  scene.camera, 
+  player,
+  new ex.BoundingBox(0, 0, 2000, 600)
+);
+
+// Use in scene update
+scene.on('postupdate', () => {
+  cameraController.update();
+});
+
+// Call effects when needed
+player.on('collisionstart', (evt) => {
+  if (evt.other instanceof Enemy) {
+    cameraController.shake(10);
+  }
+});
+```
+
+## Enemy AI Patterns
+
+### Basic Enemy Patrol
+```typescript
+class PatrollingEnemy extends ex.Actor {
+  private waypoints: ex.Vector[] = [];
+  private currentWaypoint: number = 0;
+  private moveSpeed: number = 100;
+  
+  constructor(pos: ex.Vector, patrolPoints: ex.Vector[]) {
+    super({
+      pos,
+      width: 32,
+      height: 32,
+      color: ex.Color.Red,
+      collisionType: ex.CollisionType.Active
+    });
+    
+    this.waypoints = [pos, ...patrolPoints];
+  }
+  
+  onInitialize() {
+    // Start patrol
+    this.patrol();
+  }
+  
+  patrol() {
+    const waypoint = this.waypoints[this.currentWaypoint];
+    
+    // Move to waypoint
+    this.actions.moveTo(waypoint, this.moveSpeed)
+      .callMethod(() => {
+        // Go to next waypoint
+        this.currentWaypoint = (this.currentWaypoint + 1) % this.waypoints.length;
+        this.patrol();
+      });
+  }
+  
+  onPreUpdate() {
+    // Face direction of movement
+    if (this.vel.x !== 0) {
+      this.graphics.flipHorizontal = this.vel.x < 0;
+    }
+  }
+}
+
+// Usage
+const enemy = new PatrollingEnemy(
+  ex.vec(100, 100),
+  [ex.vec(300, 100), ex.vec(300, 200), ex.vec(100, 200)]
+);
+scene.add(enemy);
+```
+
+### Chasing Enemy
+```typescript
+class ChasingEnemy extends ex.Actor {
+  private target: ex.Actor;
+  private detectionRadius: number = 200;
+  private moveSpeed: number = 150;
+  private isChasing: boolean = false;
+  
+  constructor(pos: ex.Vector, target: ex.Actor) {
+    super({
+      pos,
+      width: 32,
+      height: 32,
+      color: ex.Color.Red,
+      collisionType: ex.CollisionType.Active
+    });
+    
+    this.target = target;
+  }
+  
+  onPreUpdate() {
+    // Calculate distance to target
+    const distanceToTarget = this.pos.distance(this.target.pos);
+    
+    // Check if target is within detection radius
+    if (distanceToTarget <= this.detectionRadius) {
+      this.isChasing = true;
+    } else {
+      // Optional: stop chasing when target is far away
+      if (distanceToTarget > this.detectionRadius * 1.5) {
+        this.isChasing = false;
+      }
+    }
+    
+    // Chase behavior
+    if (this.isChasing) {
+      // Get direction to target
+      const direction = this.target.pos.sub(this.pos).normalize();
+      
+      // Move towards target
+      this.vel.x = direction.x * this.moveSpeed;
+      this.vel.y = direction.y * this.moveSpeed;
+      
+      // Face direction of movement
+      if (this.vel.x !== 0) {
+        this.graphics.flipHorizontal = this.vel.x < 0;
+      }
+    } else {
+      // Idle behavior
+      this.vel.x = 0;
+      this.vel.y = 0;
+    }
+  }
+  
+  // Optional: visualize detection radius
+  onPostDraw(ctx, delta) {
+    if (engine.debug.enabled) {
+      ctx.drawCircle(this.pos, this.detectionRadius, ex.Color.Yellow.transparent());
+    }
+  }
+}
+```
+
+## Particle Effects
+
+### Explosion Effect
+```typescript
+function createExplosion(pos: ex.Vector, scene: ex.Scene) {
+  // Create emitter
+  const explosion = new ex.ParticleEmitter({
+    pos,
+    width: 1,
+    height: 1,
+    emitterType: ex.EmitterType.Circle,
+    radius: 5,
+    minVel: 100,
+    maxVel: 200,
+    minAngle: 0,
+    maxAngle: Math.PI * 2,
+    isEmitting: true,
+    emitRate: 300,
+    opacity: 0.5,
+    fadeFlag: true,
+    particleLife: 1000,
+    minSize: 5,
+    maxSize: 10,
+    startSize: 5,
+    endSize: 1,
+    acceleration: ex.vec(0, 0),
+    beginColor: ex.Color.Orange,
+    endColor: ex.Color.Red
+  });
+  
+  scene.add(explosion);
+  
+  // Stop emitting after a short time
+  explosion.actions
+    .callMethod(() => {
+      explosion.isEmitting = false;
+    })
+    .delay(100)
+    .callMethod(() => {
+      // Remove emitter when all particles are gone
+      explosion.actions.delay(1000).die();
+    });
+  
+  return explosion;
+}
+
+// Usage
+enemy.on('collisionstart', (evt) => {
+  if (evt.other instanceof Bullet) {
+    createExplosion(enemy.pos, engine.currentScene);
+    enemy.kill();
+  }
+});
+```
+
+### Footstep/Dust Trail
+```typescript
+class Player extends ex.Actor {
+  private dustEmitter: ex.ParticleEmitter;
+  
+  constructor() {
+    super({/* config */});
+    
+    // Create dust emitter as child
+    this.dustEmitter = new ex.ParticleEmitter({
+      pos: ex.vec(0, 20), // Position at feet
+      width: 1,
+      height: 1,
+      emitterType: ex.EmitterType.Circle,
+      radius: 2,
+      minVel: 10,
+      maxVel: 20,
+      minAngle: Math.PI * 0.4,
+      maxAngle: Math.PI * 0.6, // Emit downward in an arc
+      isEmitting: false, // Start off
+      emitRate: 50,
+      opacity: 0.3,
+      fadeFlag: true,
+      particleLife: 500,
+      minSize: 2,
+      maxSize: 5,
+      startSize: 4,
+      endSize: 1,
+      beginColor: ex.Color.Gray,
+      endColor: ex.Color.White.transparent()
+    });
+    
+    this.addChild(this.dustEmitter);
+  }
+  
+  onPreUpdate(engine) {
+    // Turn on dust when moving on ground
+    if (this.isGrounded && Math.abs(this.vel.x) > 10) {
+      this.dustEmitter.isEmitting = true;
+    } else {
+      this.dustEmitter.isEmitting = false;
+    }
+  }
+}
+```
+
+## UI Components
+
+### Health Bar
+```typescript
+class HealthBar extends ex.ScreenElement {
+  private maxHealth: number;
+  private currentHealth: number;
+  private width: number;
+  private height: number;
+  private backgroundColor: ex.Color;
+  private fillColor: ex.Color;
+  
+  constructor(config: {
+    pos: ex.Vector,
+    width: number,
+    height: number,
+    maxHealth: number,
+    currentHealth?: number,
+    backgroundColor?: ex.Color,
+    fillColor?: ex.Color
+  }) {
+    super({
+      pos: config.pos,
+      width: config.width,
+      height: config.height
+    });
+    
+    this.maxHealth = config.maxHealth;
+    this.currentHealth = config.currentHealth || config.maxHealth;
+    this.width = config.width;
+    this.height = config.height;
+    this.backgroundColor = config.backgroundColor || ex.Color.Gray;
+    this.fillColor = config.fillColor || ex.Color.Green;
+  }
+  
+  onPostDraw(ctx: ex.ExcaliburGraphicsContext) {
+    // Draw background
+    ctx.drawRectangle(
+      ex.vec(0, 0),
+      this.width,
+      this.height,
+      this.backgroundColor
+    );
+    
+    // Draw fill based on health percentage
+    const fillWidth = (this.currentHealth / this.maxHealth) * this.width;
+    
+    ctx.drawRectangle(
+      ex.vec(0, 0),
+      fillWidth,
+      this.height,
+      this.fillColor
+    );
+  }
+  
+  setHealth(value: number) {
+    this.currentHealth = ex.clamp(value, 0, this.maxHealth);
+  }
+  
+  decreaseHealth(amount: number) {
+    this.setHealth(this.currentHealth - amount);
+  }
+  
+  increaseHealth(amount: number) {
+    this.setHealth(this.currentHealth + amount);
+  }
+}
+
+// Usage
+const healthBar = new HealthBar({
+  pos: ex.vec(20, 20),
+  width: 200,
+  height: 20,
+  maxHealth: 100,
+  backgroundColor: ex.Color.Gray,
+  fillColor: ex.Color.Green
+});
+
+scene.add(healthBar);
+
+// Update health
+player.on('damage', (evt) => {
+  healthBar.decreaseHealth(evt.amount);
+});
+```
+
+### Score Display
+```typescript
+class ScoreDisplay extends ex.ScreenElement {
+  private _score: number = 0;
+  private _label: ex.Label;
+  
+  constructor(pos: ex.Vector) {
+    super({
+      pos,
+      width: 200,
+      height: 30
+    });
+  }
+  
+  onInitialize() {
+    this._label = new ex.Label({
+      text: 'Score: 0',
+      font: new ex.Font({
+        family: 'Arial',
+        size: 24,
+        color: ex.Color.White
+      })
+    });
+    
+    this.graphics.use(this._label);
+  }
+  
+  set score(val: number) {
+    this._score = val;
+    this._label.text = `Score: ${this._score}`;
+  }
+  
+  get score() {
+    return this._score;
+  }
+  
+  addScore(points: number) {
+    this.score += points;
+  }
+}
+
+// Usage
+const scoreDisplay = new ScoreDisplay(ex.vec(20, 60));
+scene.add(scoreDisplay);
+
+// Update score
+enemy.on('kill', () => {
+  scoreDisplay.addScore(100);
+});
+```
+
+## Collision Systems
+
+### Basic Collision Categories
+```typescript
+// Define collision groups
+const PlayerGroup = ex.CollisionGroupManager.create('player');
+const EnemyGroup = ex.CollisionGroupManager.create('enemy');
+const ProjectileGroup = ex.CollisionGroupManager.create('projectile');
+const PickupGroup = ex.CollisionGroupManager.create('pickup');
+const TerrainGroup = ex.CollisionGroupManager.create('terrain');
+
+class Player extends ex.Actor {
+  constructor() {
+    super({
+      width: 32,
+      height: 64,
+      collisionType: ex.CollisionType.Active
+    });
+    
+    // Set collision group
+    this.body.collisionGroup = PlayerGroup;
+    
+    // Configure what this collides with
+    this.body.group = ex.CollisionGroup.collidesWith([
+      EnemyGroup,
+      PickupGroup,
+      TerrainGroup
+    ]);
+  }
+}
+
+class Bullet extends ex.Actor {
+  constructor() {
+    super({
+      width: 8,
+      height: 8,
+      collisionType: ex.CollisionType.Active
+    });
+    
+    this.body.collisionGroup = ProjectileGroup;
+    this.body.group = ex.CollisionGroup.collidesWith([
+      EnemyGroup,
+      TerrainGroup
+    ]);
+  }
+  
+  // Auto-delete bullets that go offscreen
+  onPostUpdate() {
+    if (!this.isOnScreen) {
+      this.kill();
+    }
+  }
+}
+
+class Enemy extends ex.Actor {
+  constructor() {
+    super({
+      width: 32,
+      height: 32,
+      collisionType: ex.CollisionType.Active
+    });
+    
+    this.body.collisionGroup = EnemyGroup;
+    this.body.group = ex.CollisionGroup.collidesWith([
+      PlayerGroup,
+      ProjectileGroup,
+      TerrainGroup
+    ]);
+  }
+}
+```
+
+### One-Way Platforms
+```typescript
+class OneWayPlatform extends ex.Actor {
+  constructor(pos: ex.Vector, width: number) {
+    super({
+      pos,
+      width,
+      height: 10,
+      color: ex.Color.Green,
+      collisionType: ex.CollisionType.Fixed
+    });
+  }
+  
+  onInitialize() {
+    // Only allow collisions from the top
+    this.on('precollision', (evt) => {
+      // If collision is not from the top, cancel it
+      if (evt.side !== ex.Side.Top) {
+        evt.cancel();
+        return;
+      }
+      
+      // Only allow collision if the other actor is moving downward
+      if (evt.other.vel.y < 0) {
+        evt.cancel();
+      }
+    });
+  }
+}
+```
+
+## Save/Load System
+
+### Basic Local Storage Save System
+```typescript
+interface GameSaveData {
+  playerPosition: { x: number, y: number };
+  score: number;
+  level: number;
+  inventory: string[];
+  health: number;
+  maxHealth: number;
+  checkpoints: { x: number, y: number }[];
+}
+
+class SaveSystem {
+  private readonly SAVE_KEY = 'my-awesome-game-save';
+  
+  constructor() {}
+  
+  saveGame(data: GameSaveData): void {
+    try {
+      localStorage.setItem(this.SAVE_KEY, JSON.stringify(data));
+      console.log('Game saved successfully');
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+  }
+  
+  loadGame(): GameSaveData | null {
+    try {
+      const saveData = localStorage.getItem(this.SAVE_KEY);
+      if (!saveData) {
+        return null;
+      }
+      
+      return JSON.parse(saveData) as GameSaveData;
+    } catch (e) {
+      console.error('Failed to load save game:', e);
+      return null;
+    }
+  }
+  
+  deleteSave(): void {
+    try {
+      localStorage.removeItem(this.SAVE_KEY);
+      console.log('Save data deleted');
+    } catch (e) {
+      console.error('Failed to delete save:', e);
+    }
+  }
+  
+  hasSaveData(): boolean {
+    return localStorage.getItem(this.SAVE_KEY) !== null;
+  }
+}
+
+// Usage
+const saveSystem = new SaveSystem();
+
+// Save game
+function saveGameState() {
+  const saveData: GameSaveData = {
+    playerPosition: { x: player.pos.x, y: player.pos.y },
+    score: gameState.score,
+    level: gameState.currentLevel,
+    inventory: player.inventory,
+    health: player.health,
+    maxHealth: player.maxHealth,
+    checkpoints: gameState.checkpoints
+  };
+  
+  saveSystem.saveGame(saveData);
+}
+
+// Load game
+function loadGameState() {
+  const saveData = saveSystem.loadGame();
+  if (!saveData) {
+    console.log('No save data found');
+    return false;
+  }
+  
+  // Restore game state
+  player.pos = ex.vec(saveData.playerPosition.x, saveData.playerPosition.y);
+  gameState.score = saveData.score;
+  gameState.currentLevel = saveData.level;
+  player.inventory = saveData.inventory;
+  player.health = saveData.health;
+  player.maxHealth = saveData.maxHealth;
+  gameState.checkpoints = saveData.checkpoints;
+  
+  return true;
+}
+```
+
+## Audio Management
+
+### Audio Manager
+```typescript
+class AudioManager {
+  private music: { [key: string]: ex.Sound } = {};
+  private sfx: { [key: string]: ex.Sound } = {};
+  private currentMusic: ex.Sound | null = null;
+  private musicVolume: number = 0.5;
+  private sfxVolume: number = 0.7;
+  
+  constructor() {}
+  
+  init(resources: any) {
+    // Add music tracks
+    this.addMusic('main', resources.MainMusic);
+    this.addMusic('battle', resources.BattleMusic);
+    this.addMusic('menu', resources.MenuMusic);
+    
+    // Add sound effects
+    this.addSfx('jump', resources.JumpSound);
+    this.addSfx('coin', resources.CoinSound);
+    this.addSfx('hit', resources.HitSound);
+    this.addSfx('explosion', resources.ExplosionSound);
+    
+    // Apply initial volumes
+    this.setMusicVolume(this.musicVolume);
+    this.setSfxVolume(this.sfxVolume);
+  }
+  
+  addMusic(key: string, sound: ex.Sound) {
+    sound.loop = true;
+    this.music[key] = sound;
+  }
+  
+  addSfx(key: string, sound: ex.Sound) {
+    this.sfx[key] = sound;
+  }
+  
+  playMusic(key: string) {
+    // Stop current music if playing
+    if (this.currentMusic) {
+      this.currentMusic.stop();
+    }
+    
+    // Play new music
+    if (this.music[key]) {
+      this.music[key].play();
+      this.currentMusic = this.music[key];
+    } else {
+      console.warn(`Music "${key}" not found`);
+    }
+  }
+  
+  stopMusic() {
+    if (this.currentMusic) {
+      this.currentMusic.stop();
+      this.currentMusic = null;
+    }
+  }
+  
+  playSfx(key: string) {
+    if (this.sfx[key]) {
+      // Make a clone to allow overlapping sounds
+      const sound = this.sfx[key].clone();
+      sound.play();
+    } else {
+      console.warn(`Sound effect "${key}" not found`);
+    }
+  }
+  
+  setMusicVolume(volume: number) {
+    this.musicVolume = ex.clamp(volume, 0, 1);
+    Object.values(this.music).forEach(sound => {
+      sound.volume = this.musicVolume;
+    });
+  }
+  
+  setSfxVolume(volume: number) {
+    this.sfxVolume = ex.clamp(volume, 0, 1);
+    Object.values(this.sfx).forEach(sound => {
+      sound.volume = this.sfxVolume;
+    });
+  }
+  
+  muteAll() {
+    this.setMusicVolume(0);
+    this.setSfxVolume(0);
+  }
+  
+  unmuteAll() {
+    this.setMusicVolume(0.5);
+    this.setSfxVolume(0.7);
+  }
+}
+
+// Usage
+const audioManager = new AudioManager();
+audioManager.init(Resources);
+
+// Menu scene
+menuScene.onActivate = () => {
+  audioManager.playMusic('menu');
+};
+
+// Play sound on jump
+if (engine.input.keyboard.wasPressed(ex.Keys.Space)) {
+  player.vel.y = -500;
+  audioManager.playSfx('jump');
+}
+```
+
+## Performance Optimization
+
+### Object Pooling
+```typescript
+class BulletPool {
+  private pool: Bullet[] = [];
+  private scene: ex.Scene;
+  private maxSize: number;
+  
+  constructor(scene: ex.Scene, initialSize: number = 20, maxSize: number = 100) {
+    this.scene = scene;
+    this.maxSize = maxSize;
+    
+    // Initialize pool
+    for (let i = 0; i < initialSize; i++) {
+      this.createNewBullet();
+    }
+  }
+  
+  private createNewBullet(): Bullet {
+    const bullet = new Bullet();
+    bullet.kill(); // Start inactive
+    this.scene.add(bullet);
+    this.pool.push(bullet);
+    return bullet;
+  }
+  
+  get(): Bullet {
+    // Find first inactive bullet
+    let bullet = this.pool.find(b => !b.active);
+    
+    // If no inactive bullets and not at max capacity, create a new one
+    if (!bullet && this.pool.length < this.maxSize) {
+      bullet = this.createNewBullet();
+    }
+    
+    // If still no bullet, reuse the oldest one
+    if (!bullet) {
+      bullet = this.pool[0]; // Oldest bullet
+      bullet.kill(); // Ensure it's inactive
+    }
+    
+    // Return the bullet
+    return bullet;
+  }
+  
+  reset(): void {
+    // Deactivate all bullets
+    this.pool.forEach(bullet => {
+      bullet.kill();
+    });
+  }
+}
+
+// Bullet class
+class Bullet extends ex.Actor {
+  fire(pos: ex.Vector, direction: ex.Vector, speed: number): void {
+    // Reset state
+    this.pos = pos.clone();
+    this.vel = direction.normalize().scale(speed);
+    
+    // Activate
+    if (!this.active) {
+      this.scene.add(this);
+    }
+  }
+  
+  onPostUpdate(engine: ex.Engine): void {
+    // Auto-destroy when offscreen
+    if (!this.isOnScreen) {
+      this.kill();
+    }
+  }
+}
+
+// Usage
+const bulletPool = new BulletPool(scene);
+
+player.on('pointerdown', (evt) => {
+  // Get bullet from pool
+  const bullet = bulletPool.get();
+  
+  // Calculate direction
+  const direction = evt.worldPos.sub(player.pos);
+  
+  // Fire bullet
+  bullet.fire(player.pos, direction, 500);
+});
+```
+
+### Chunked Level Loading
+```typescript
+class ChunkedLevelManager {
+  private scene: ex.Scene;
+  private player: ex.Actor;
+  private chunkSize: number = 800; // Width of each chunk
+  private loadDistance: number = 1600; // Load chunks this far ahead
+  private chunks: Map<number, boolean> = new Map(); // Track loaded chunks
+  
+  constructor(scene: ex.Scene, player: ex.Actor) {
+    this.scene = scene;
+    this.player = player;
+  }
+  
+  update() {
+    // Calculate which chunk the player is in
+    const playerChunk = Math.floor(this.player.pos.x / this.chunkSize);
+    
+    // Load range: current chunk and next few chunks
+    const minChunk = playerChunk - 1;
+    const maxChunk = playerChunk + Math.ceil(this.loadDistance / this.chunkSize);
+    
+    // Load new chunks that are in range
+    for (let i = minChunk; i <= maxChunk; i++) {
+      if (!this.chunks.has(i)) {
+        this.loadChunk(i);
+        this.chunks.set(i, true);
+      }
+    }
+    
+    // Unload chunks that are too far away
+    for (const chunkId of this.chunks.keys()) {
+      if (chunkId < minChunk || chunkId > maxChunk) {
+        this.unloadChunk(chunkId);
+        this.chunks.delete(chunkId);
+      }
+    }
+  }
+  
+  private loadChunk(chunkId: number) {
+    console.log(`Loading chunk ${chunkId}`);
+    
+    // Chunk start position
+    const chunkStart = chunkId * this.chunkSize;
+    
+    // Create some platforms
+    const random = new ex.Random(chunkId); // Seed with chunk ID for consistency
+    
+    // Ground platform
+    const ground = new ex.Actor({
+      pos: ex.vec(chunkStart + this.chunkSize / 2, 500),
+      width: this.chunkSize,
+      height: 20,
+      color: ex.Color.Green,
+      collisionType: ex.CollisionType.Fixed
+    });
+    
+    this.scene.add(ground);
+    ground.addTag(`chunk_${chunkId}`);
+    
+    // Add some random platforms
+    const numPlatforms = random.integer(3, 8);
+    for (let i = 0; i < numPlatforms; i++) {
+      const x = random.floating(chunkStart, chunkStart + this.chunkSize);
+      const y = random.floating(200, 450);
+      const width = random.floating(50, 150);
+      
+      const platform = new ex.Actor({
+        pos: ex.vec(x, y),
+        width: width,
+        height: 10,
+        color: ex.Color.Brown,
+        collisionType: ex.CollisionType.Fixed
+      });
+      
+      this.scene.add(platform);
+      platform.addTag(`chunk_${chunkId}`);
+    }
+    
+    // Add some collectibles
+    const numCollectibles = random.integer(2, 5);
+    for (let i = 0; i < numCollectibles; i++) {
+      const x = random.floating(chunkStart, chunkStart + this.chunkSize);
+      const y = random.floating(100, 400);
+      
+      const collectible = new ex.Actor({
+        pos: ex.vec(x, y),
+        radius: 10,
+        color: ex.Color.Yellow,
+        collisionType: ex.CollisionType.Passive
+      });
+      
+      this.scene.add(collectible);
+      collectible.addTag(`chunk_${chunkId}`);
+    }
+  }
+  
+  private unloadChunk(chunkId: number) {
+    console.log(`Unloading chunk ${chunkId}`);
+    
+    // Find all entities with this chunk's tag
+    const tag = `chunk_${chunkId}`;
+    for (const entity of this.scene.entities) {
+      if (entity.hasTag(tag)) {
+        entity.kill();
+      }
+    }
+  }
+}
+
+// Usage in scene
+class GameScene extends ex.Scene {
+  private player: Player;
+  private levelManager: ChunkedLevelManager;
+  
+  onInitialize(engine: ex.Engine) {
+    this.player = new Player();
+    this.add(this.player);
+    
+    this.levelManager = new ChunkedLevelManager(this, this.player);
+    
+    // Camera follow
+    this.camera.strategy.lockToActor(this.player);
+  }
+  
+  onPostUpdate(engine: ex.Engine) {
+    this.levelManager.update();
+  }
+}
+```
+
+These patterns provide a solid foundation for building games with Excalibur. They can be mixed, matched, and extended to create a wide variety of game types and mechanics.

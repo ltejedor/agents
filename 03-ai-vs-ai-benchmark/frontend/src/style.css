@@ -1,0 +1,387 @@
+/* Game styles */
+.game-info {
+  text-align: center;
+  margin: 10px 0;
+  max-width: 800px;
+}
+
+.instructions {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+canvas {
+  border: 2px solid #444;
+}
+
+/* Game Component styles */
+.game-wrapper {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0a0a0a;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v2H20v-1.5zM0 20h2v20H0V20zm4 0h2v20H4V20zm4 0h2v20H8V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20zm4 0h2v20h-2V20z' fill='%23200000' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E");
+  overflow: hidden;
+  position: relative;
+}
+
+.game-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cfilter id='a' x='0' y='0'%3E%3CfeGaussianBlur stdDeviation='20' result='b'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.01' numOctaves='5' result='c'/%3E%3CfeDisplacementMap in='b' in2='c' scale='30' xChannelSelector='R' yChannelSelector='G' result='d'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' filter='url(%23a)' opacity='.15'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+  animation: fogAnimation 20s ease-in-out infinite;
+}
+
+#game-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  margin: 0 auto;
+  border: 3px solid var(--dark-blood);
+  box-shadow: 0 0 30px rgba(139, 0, 0, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.6);
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+}
+
+/* Responsive styles for game canvas */
+@media (max-width: 800px) {
+  #game-canvas {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-height: 600px) {
+  #game-canvas {
+    height: 100%;
+    width: auto;
+  }
+}
+
+/* Character Creator styles */
+:root {
+  --blood-red: #ff1a1a;
+  --dark-blood: #8a0303;
+  --shadow-gray: #1a1a1a;
+  --text-color: #ffffff;
+  --bg-dark: #1a1a1a;
+  --bone-white: #fffae6;
+  --eerie-glow: 0 0 15px rgba(255, 0, 0, 0.4);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Special Elite', cursive, Arial, sans-serif;
+  background-color: #0a0a0a;
+  color: var(--bone-white);
+  overflow-y: auto;
+}
+
+.App {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.container.hidden {
+  display: none;
+}
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Special+Elite&family=Creepster&display=swap');
+
+.container {
+  max-width: 800px;
+  width: 90%;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--bg-dark);
+  border: 2px solid var(--blood-red);
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
+  font-family: 'Special Elite', cursive;
+  overflow-y: visible;
+  height: auto;
+}
+
+.container h1, .container h2 {
+  font-family: 'Nosifer', cursive;
+  color: var(--blood-red);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  letter-spacing: 1px;
+  line-height: 1.4;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(139, 0, 0, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 20px rgba(139, 0, 0, 0.2);
+}
+
+.radio-group, .stat-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.radio-group label {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.5rem;
+  background: rgba(139, 0, 0, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bio-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.container textarea {
+  width: 100%;
+  height: 80px;
+  background: rgba(248, 240, 227, 0.1);
+  border: 1px solid var(--blood-red);
+  color: var(--bone-white);
+  padding: 0.5rem;
+  resize: none;
+  font-size: 1.2rem;
+}
+
+.stat-group {
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stat-group label {
+  display: grid;
+  grid-template-columns: 120px 45px 70px 45px;
+  align-items: center;
+  gap: 1.2rem;
+  font-size: 1.1rem;
+  padding: 0.5rem 0;
+}
+
+.container input[type="number"] {
+  width: 60px;
+  padding: 0.5rem;
+  background: rgba(248, 240, 227, 0.1);
+  border: 1px solid var(--blood-red);
+  color: var(--bone-white);
+  font-size: 1.1rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.container input[type="number"]::-webkit-outer-spin-button,
+.container input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.stat-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.container button {
+  padding: 0.8rem 1.5rem;
+  background: var(--blood-red);
+  color: var(--bone-white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Creepster', cursive;
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+.container button:hover {
+  transform: scale(1.05);
+  background: #a00000;
+}
+
+.container button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.container button.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.container button.loading::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes fogAnimation {
+  0% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.1; }
+}
+
+.json-output {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(248, 240, 227, 0.1);
+  border: 1px solid var(--blood-red);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.connection-status {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--blood-red);
+  border-radius: 4px;
+  text-align: center;
+  font-family: 'Special Elite', cursive;
+  animation: pulse 1.5s infinite;
+}
+
+.connection-status.success {
+  border-color: #4CAF50;
+  color: #4CAF50;
+  animation: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group > label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--blood-red);
+  font-family: 'Creepster', cursive;
+  font-size: 1.2rem;
+}
+
+.container input, .container textarea {
+  font-family: 'Special Elite', cursive;
+  background: var(--shadow-gray);
+  color: var(--text-color);
+  border: 1px solid var(--blood-red);
+}
+
+.name-input {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.radio-group label {
+  font-family: 'Special Elite', cursive;
+  background: var(--shadow-gray);
+}
+
+.debug-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 100;
+  padding: 5px 10px;
+  background: #1a0000;
+  color: var(--blood-red);
+  border: 1px solid var(--dark-blood);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Creepster', cursive;
+  box-shadow: var(--eerie-glow);
+  transition: all 0.3s ease;
+}
+
+.debug-toggle:hover {
+  background: #300;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+}
+
+@media (max-width: 600px) {
+  .container {
+    margin: 1rem;
+    padding: 1rem;
+    width: 95%;
+  }
+  
+  .buttons {
+    flex-direction: column;
+  }
+  
+  /* Improve mobile scrolling */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .radio-group {
+    flex-direction: column;
+  }
+  
+  .stat-group label {
+    grid-template-columns: 100px 40px 50px 40px;
+    gap: 0.5rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+  }
+}

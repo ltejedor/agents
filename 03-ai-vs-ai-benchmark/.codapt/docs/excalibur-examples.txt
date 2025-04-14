@@ -1,0 +1,390 @@
+# Excalibur.js Code Examples
+
+## Basic Game Setup
+```typescript
+import * as ex from 'excalibur';
+
+const game = new ex.Engine({
+  width: 800,
+  height: 600,
+  backgroundColor: ex.Color.fromHex('#54C0CA'),
+  displayMode: ex.DisplayMode.FitScreen
+});
+
+// Create a simple actor
+const player = new ex.Actor({
+  pos: ex.vec(400, 300),
+  width: 50,
+  height: 50,
+  color: ex.Color.Red
+});
+
+// Add to the default scene
+game.add(player);
+
+// Start the game
+game.start();
+```
+
+## Resource Loading Pattern
+```typescript
+// resources.ts
+export const Resources = {
+  Player: new ex.ImageSource('./images/player.png'),
+  Enemy: new ex.ImageSource('./images/enemy.png'),
+  Background: new ex.ImageSource('./images/background.png'),
+  JumpSound: new ex.Sound('./sounds/jump.wav'),
+  BackgroundMusic: new ex.Sound('./sounds/background.ogg')
+} as const;
+
+// main.ts
+import * as ex from 'excalibur';
+import { Resources } from './resources';
+
+const game = new ex.Engine({/* config */});
+const loader = new ex.Loader();
+
+// Add all resources to the loader
+for (const resource of Object.values(Resources)) {
+  loader.addResource(resource);
+}
+
+game.start(loader).then(() => {
+  // Game is loaded and ready
+  const player = new Player();
+  game.add(player);
+});
+```
+
+## Scene Creation and Navigation
+```typescript
+class MainMenu extends ex.Scene {
+  onInitialize(engine) {
+    const startButton = new ex.Actor({
+      pos: ex.vec(engine.halfDrawWidth, engine.halfDrawHeight),
+      width: 200,
+      height: 50,
+      color: ex.Color.Green
+    });
+    
+    startButton.on('pointerdown', () => {
+      engine.goToScene('game');
+    });
+    
+    this.add(startButton);
+  }
+}
+
+class GameScene extends ex.Scene {
+  onInitialize(engine) {
+    const player = new Player();
+    this.add(player);
+  }
+}
+
+// Add scenes to game
+game.add('menu', new MainMenu());
+game.add('game', new GameScene());
+
+// Start with menu
+game.start().then(() => {
+  game.goToScene('menu');
+});
+```
+
+## Custom Actor Class
+```typescript
+class Player extends ex.Actor {
+  constructor() {
+    super({
+      pos: ex.vec(100, 100),
+      width: 32,
+      height: 32,
+      color: ex.Color.Blue
+    });
+  }
+  
+  onInitialize(engine) {
+    // Set up graphics
+    const sprite = Resources.Player.toSprite();
+    this.graphics.use(sprite);
+    
+    // Set up collision
+    this.body.collisionType = ex.CollisionType.Active;
+  }
+  
+  onPreUpdate(engine, delta) {
+    // Handle input
+    if (engine.input.keyboard.isHeld(ex.Keys.Left)) {
+      this.vel.x = -150;
+    } else if (engine.input.keyboard.isHeld(ex.Keys.Right)) {
+      this.vel.x = 150;
+    } else {
+      this.vel.x = 0;
+    }
+    
+    if (engine.input.keyboard.wasPressed(ex.Keys.Space)) {
+      this.vel.y = -300; // Jump
+      Resources.JumpSound.play();
+    }
+  }
+  
+  onCollisionStart(collision) {
+    if (collision.other instanceof Enemy) {
+      // Handle collision with enemy
+    }
+  }
+}
+```
+
+## Animation Example
+```typescript
+// Setup sprite sheet
+const spriteSheet = ex.SpriteSheet.fromImageSource({
+  image: Resources.Player,
+  grid: {
+    rows: 1,
+    columns: 8,
+    spriteWidth: 32,
+    spriteHeight: 32
+  }
+});
+
+// Create animations
+const idleAnimation = ex.Animation.fromSpriteSheet(
+  spriteSheet,
+  [0, 1], // frames to use
+  200 // duration per frame in ms
+);
+
+const runAnimation = ex.Animation.fromSpriteSheet(
+  spriteSheet,
+  [2, 3, 4, 5, 6, 7], // frames to use
+  100 // duration per frame in ms
+);
+
+// Use in actor
+this.graphics.add('idle', idleAnimation);
+this.graphics.add('run', runAnimation);
+
+// Switch animations based on state
+if (this.vel.x !== 0) {
+  this.graphics.use('run');
+} else {
+  this.graphics.use('idle');
+}
+```
+
+## Basic Platformer Physics
+```typescript
+// Configure physics
+ex.Physics.gravity = ex.vec(0, 800);
+
+class Player extends ex.Actor {
+  private isGrounded = false;
+  
+  constructor() {
+    super({
+      pos: ex.vec(100, 100),
+      width: 32,
+      height: 64,
+      collisionType: ex.CollisionType.Active
+    });
+  }
+  
+  onPreUpdate(engine, delta) {
+    // Left/right movement
+    if (engine.input.keyboard.isHeld(ex.Keys.Left)) {
+      this.vel.x = -200;
+    } else if (engine.input.keyboard.isHeld(ex.Keys.Right)) {
+      this.vel.x = 200;
+    } else {
+      this.vel.x = 0;
+    }
+    
+    // Jump when grounded
+    if (this.isGrounded && engine.input.keyboard.wasPressed(ex.Keys.Space)) {
+      this.vel.y = -500;
+      this.isGrounded = false;
+    }
+  }
+  
+  onCollisionStart(collision) {
+    // Check for ground collision
+    if (collision.other instanceof Ground && collision.side === ex.Side.Bottom) {
+      this.isGrounded = true;
+    }
+  }
+  
+  onCollisionEnd(collision) {
+    if (collision.other instanceof Ground) {
+      this.isGrounded = false;
+    }
+  }
+}
+
+// Create ground platforms
+const ground = new ex.Actor({
+  pos: ex.vec(400, 500),
+  width: 800,
+  height: 20,
+  color: ex.Color.Green,
+  collisionType: ex.CollisionType.Fixed
+});
+
+game.add(ground);
+```
+
+## Camera Following Player
+```typescript
+// In your scene initialization
+const player = new Player();
+this.add(player);
+
+// Lock camera to player
+this.camera.strategy.lockToActor(player);
+
+// Or with elasticity for smoother following
+this.camera.strategy.elasticToActor(player, 0.8, 0.9);
+
+// Limit camera to level bounds
+const levelBounds = new ex.BoundingBox(0, 0, 2000, 1000);
+this.camera.strategy.limitCameraBounds(levelBounds);
+```
+
+## TileMap Basic Usage
+```typescript
+// Create a tilemap
+const tilemap = new ex.TileMap({
+  pos: ex.vec(0, 0),
+  tileWidth: 32,
+  tileHeight: 32,
+  rows: 20,
+  columns: 30
+});
+
+// Access a specific tile
+const tile = tilemap.getTile(5, 10);
+tile.solid = true;
+
+// Add graphics to tiles
+const grassSprite = Resources.Tileset.toSprite();
+tile.addGraphic(grassSprite);
+
+// Add tilemap to scene
+scene.add(tilemap);
+```
+
+## Using Actions for Movement Patterns
+```typescript
+// Make an enemy patrol back and forth
+const enemy = new Enemy();
+enemy.actions.repeatForever(ctx => {
+  // Move right, wait, then move left, wait
+  ctx.moveTo(ex.vec(500, enemy.pos.y), 100); // move to x=500 at 100px/sec
+  ctx.delay(1000); // wait 1 second
+  ctx.moveTo(ex.vec(100, enemy.pos.y), 100); // move to x=100 at 100px/sec
+  ctx.delay(1000); // wait 1 second
+});
+
+// Make a platform move up and down
+const platform = new Platform();
+platform.actions.repeatForever(ctx => {
+  ctx.easeBy(ex.vec(0, -100), 2000, ex.EasingFunctions.EaseInOutCubic);
+  ctx.easeBy(ex.vec(0, 100), 2000, ex.EasingFunctions.EaseInOutCubic);
+});
+```
+
+## Simple Collision Groups Example
+```typescript
+// Create collision groups
+const PlayerGroup = ex.CollisionGroupManager.create('player');
+const EnemyGroup = ex.CollisionGroupManager.create('enemy');
+const PickupGroup = ex.CollisionGroupManager.create('pickup');
+
+// Player collides with enemies and pickups
+player.body.collisionGroup = PlayerGroup;
+player.body.group = ex.CollisionGroup.collidesWith([EnemyGroup, PickupGroup]);
+
+// Enemies collide with player only
+enemy.body.collisionGroup = EnemyGroup;
+enemy.body.group = ex.CollisionGroup.collidesWith([PlayerGroup]);
+
+// Pickups collide with player only
+pickup.body.collisionGroup = PickupGroup;
+pickup.body.group = ex.CollisionGroup.collidesWith([PlayerGroup]);
+```
+
+## Simple UI Creation
+```typescript
+class ScoreDisplay extends ex.ScreenElement {
+  private _score = 0;
+  private _label: ex.Label;
+  
+  constructor() {
+    super({
+      pos: ex.vec(20, 20)
+    });
+  }
+  
+  onInitialize() {
+    this._label = new ex.Label({
+      text: 'Score: 0',
+      font: new ex.Font({
+        size: 24,
+        color: ex.Color.White
+      })
+    });
+    
+    this.graphics.use(this._label);
+  }
+  
+  set score(val: number) {
+    this._score = val;
+    this._label.text = `Score: ${this._score}`;
+  }
+  
+  get score() {
+    return this._score;
+  }
+}
+
+// Usage
+const scoreDisplay = new ScoreDisplay();
+scene.add(scoreDisplay);
+
+// Update score
+scoreDisplay.score = 100;
+```
+
+## Particle Effects
+```typescript
+const emitter = new ex.ParticleEmitter({
+  pos: ex.vec(400, 300),
+  emitterType: ex.EmitterType.Circle,
+  radius: 5,
+  minVel: 100,
+  maxVel: 200,
+  minAngle: 0,
+  maxAngle: Math.PI * 2,
+  isEmitting: true,
+  emitRate: 300,
+  opacity: 0.5,
+  fadeFlag: true,
+  particleLife: 1000,
+  minSize: 1,
+  maxSize: 10,
+  startSize: 5,
+  endSize: 1,
+  acceleration: ex.vec(0, 98),
+  beginColor: ex.Color.Red,
+  endColor: ex.Color.Yellow
+});
+
+scene.add(emitter);
+
+// Stop emitting after 3 seconds
+setTimeout(() => {
+  emitter.isEmitting = false;
+}, 3000);
+```

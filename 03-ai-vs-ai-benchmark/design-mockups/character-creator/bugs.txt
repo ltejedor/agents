@@ -1,0 +1,3 @@
+Appearance settings don't properly generate a JSON description.
+
+Values are placeholders pending a clearer design direction
