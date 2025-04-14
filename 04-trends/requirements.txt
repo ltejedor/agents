@@ -1,0 +1,6 @@
+gradio
+hdbscan
+sentence_transformers
+feedparser
+requests
+bs4
