@@ -1,8 +1,10 @@
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from collections import Counter
+import re
 
-def fetch_articles(feed_urls, limit=2):
+def fetch_articles(feed_urls, limit=5):
     all_articles = []
     for name, url in feed_urls.items():
         try:
@@ -45,8 +47,6 @@ def fetch_trending_repos(language=None, since="daily"):
 
     return trending
 
-from collections import Counter
-import re
 
 def analyze_trends(items):
     """Dummy trend analyzer: count word frequencies in titles."""
