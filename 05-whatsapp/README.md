@@ -21,7 +21,7 @@ This project allows you to interact with WhatsApp through a command-line interfa
 ### 1. Clone this repository
 
 ```bash
-git clone https://github.com/yourusername/whatsapp-agent.git
+git clone https://github.com/ltejedor/05-whatsapp.git
 cd whatsapp-agent
 ```
 
