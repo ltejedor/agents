@@ -1,1 +1,11 @@
 spacy
+feedparser
+beautifulsoup4
+requests
+gradio
+networkx
+matplotlib
+pyvis
+plotly
+langchain
+langchain_experimental

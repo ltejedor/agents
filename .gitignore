@@ -2,7 +2,8 @@
 
 news/__pycache__
 news/utils/__pycache__
-
 04-trends/__pycache__
+06-knowledge-graph/__pycache__
+06-knowledge-graph/lib
 
 .DS_Store
