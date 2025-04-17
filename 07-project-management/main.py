@@ -50,6 +50,7 @@ def main():
             agent = CodeAgent(
                 tools=[*tool_collection.tools], 
                 model=model,
+                additional_authorized_imports=["time", "numpy", "pandas", "json"],
                 add_base_tools=False
             )
             
