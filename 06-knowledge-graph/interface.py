@@ -12,8 +12,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
 from langchain_experimental.graph_transformers import LLMGraphTransformer
 
-# Load the spaCy model (kept for other tasks if needed)
-nlp = spacy.load("en_core_web_sm")
 
 def build_interactive_knowledge_graph(feed_items):
     """

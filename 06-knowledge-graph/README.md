@@ -1,3 +1,9 @@
+---
+title: 06-knowledge-graph
+app_file: interface.py
+sdk: gradio
+sdk_version: 4.44.1
+---
 # Knowledge Graph Project README
 
 ## Overview

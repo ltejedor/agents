@@ -7,3 +7,6 @@ news/utils/__pycache__
 06-knowledge-graph/lib
 
 .DS_Store
+
+02-human-alignment/search.py
+02-human-alignment/search2.py
