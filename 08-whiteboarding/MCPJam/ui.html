@@ -1,17 +1,25 @@
-<h2>Shape & Connector Creator</h2>
-<p>Count: <input id="count" type="number" value="5"></p>
-<button id="create">Create</button>
-<button id="cancel">Cancel</button>
+<!DOCTYPE html>
+<html>
+<body>
 <script>
+const ENDPOINT = "http://localhost:8787/pull";      // change for prod
 
-document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
-  const count = parseInt(textbox.value, 10);
-  parent.postMessage({ pluginMessage: { type: 'create-shapes', count } }, '*')
+async function poll() {
+  try {
+    const res = await fetch(ENDPOINT, { credentials: "include" });
+    if (res.ok) {
+      const cmds = await res.json();          // could be [] or an array
+      cmds.forEach(cmd =>
+        parent.postMessage({ pluginMessage: cmd }, "*")
+      );
+    }
+  } catch (err) {
+    console.error("MCP poll error", err);
+  } finally {
+    setTimeout(poll, 2000);                    // repeat every 2 s
+  }
 }
-
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
-
+poll();
 </script>
+</body>
+</html>

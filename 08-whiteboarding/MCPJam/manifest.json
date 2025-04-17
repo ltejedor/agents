@@ -13,6 +13,8 @@
   "networkAccess": {
     "allowedDomains": [
       "none"
-    ]
+    ],
+    "reasoning": "Bridge polls our MCP server for board‑mutation commands",
+    "devAllowedDomains": ["http://localhost:8787"]
   }
 }
