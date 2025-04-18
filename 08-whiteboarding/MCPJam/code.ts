@@ -7,10 +7,12 @@ type Cmd =
   | { op: "move_node"; id: string; x: number; y: number }
   | { op: "start_timer"; seconds: number };
 
-figma.ui.onmessage = (cmd: Cmd) => {
+figma.ui.onmessage = async (cmd: Cmd) => {
   switch (cmd.op) {
     case "create_sticky": {
       const sticky = figma.createSticky();
+      // Load the default sticky font before setting text
+      await figma.loadFontAsync({ family: "Inter", style: "Medium" });
       sticky.text.characters = cmd.text;
       sticky.x = cmd.x;
       sticky.y = cmd.y;
