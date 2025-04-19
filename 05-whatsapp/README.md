@@ -25,9 +25,10 @@ git clone https://github.com/ltejedor/05-whatsapp.git
 cd whatsapp-agent
 ```
 
-### 2. Install Python dependencies
+### 2. Install Python dependencies (use the root requirements.txt)
 
 ```bash
+# from repository root:
 pip install -r requirements.txt
 ```
 
@@ -137,7 +138,7 @@ This application consists of three main components:
 
 ### Common Errors
 
-- **ModuleNotFoundError**: Make sure you've installed all required dependencies with `pip install -r requirements.txt`
+- **ModuleNotFoundError**: Make sure you've installed all required dependencies with `pip install -r requirements.txt` (from repository root)
 - **Connection Errors**: Ensure the WhatsApp bridge is running before starting the main script
 - **API Key Errors**: If you're using your own Anthropic API key, verify it's correctly set in the environment variables
 

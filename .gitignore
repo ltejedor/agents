@@ -6,6 +6,7 @@ news/utils/__pycache__
 06-knowledge-graph/__pycache__
 06-knowledge-graph/lib
 08-whiteboarding/mcp_server/__pycache__
+08-whiteboarding/__pycache__
 09-google-sheets/__pycache__
 
 .DS_Store
@@ -17,3 +18,5 @@ news/utils/__pycache__
 07-project-management/whatsapp-mcp
 
 09-google-sheets/*.png
+
+mcp-servers/google-sheets-mcp/dist/gcp-oauth.keys.json

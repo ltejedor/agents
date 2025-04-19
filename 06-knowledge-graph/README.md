@@ -21,8 +21,9 @@ This project creates an interactive knowledge graph visualization from RSS feeds
 ## Installation
 
 1. Clone the repository
-2. Install the required dependencies:
+2. Install the required dependencies (use root requirements.txt):
    ```bash
+   # from repository root:
    pip install -r requirements.txt
    ```
 3. Download the required spaCy model:
@@ -47,7 +48,6 @@ The interface allows you to:
 - `interface.py`: Main Gradio application with the UI and visualization logic
 - `fetch.py`: Functions for retrieving and parsing RSS feeds
 - `sources.py`: List of available RSS feed URLs
-- `requirements.txt`: Required Python packages
 - `tutorials/`: Example notebooks showing the knowledge graph extraction process
 
 ## How It Works

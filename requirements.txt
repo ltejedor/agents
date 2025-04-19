@@ -1,2 +1,20 @@
 smolagents
 pocketflow
+
+# WhatsApp agent dependencies (05-whatsapp)
+schedule          # for WhatsApp agent only
+pywa              # for WhatsApp agent only
+
+# Knowledge Graph agent dependencies (06-knowledge-graph)
+spacy                     # for Knowledge Graph agent only
+feedparser                # for Knowledge Graph agent only
+beautifulsoup4            # for Knowledge Graph agent only
+requests                  # for Knowledge Graph agent only
+gradio                    # for Knowledge Graph agent only
+networkx                  # for Knowledge Graph agent only
+matplotlib                # for Knowledge Graph agent only
+pyvis                     # for Knowledge Graph agent only
+plotly                    # for Knowledge Graph agent only
+langchain                 # for Knowledge Graph agent only
+langchain_experimental    # for Knowledge Graph agent only
+langchain_openai          # for Knowledge Graph agent only

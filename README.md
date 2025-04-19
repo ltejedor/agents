@@ -70,6 +70,30 @@ Agents that help you promote and sell your products, such as:
 3. **Customize**: Adapt the agents to your specific product needs
 4. **Contribute**: Share your improvements or ideas by opening issues or PRs
 
+## Running Agents Locally
+
+Each numbered agent workflow includes a Python entry point (`main.py`). From the repository root, you can run any workflow directly without changing directories. For example:
+```bash
+# Research
+python 02-human-alignment/main.py
+python news/main.py
+
+# Project Management
+python 07-project-management/main.py
+
+# Whiteboarding (FigJam)
+python 08-whiteboarding/main.py
+
+# Google Sheets CLI
+python 09-google-sheets/main.py
+```
+
+Before running, install root dependencies:
+```bash
+pip install -r requirements.txt
+# For workflows with extra dependencies, see each folder’s README.
+```
+
 ## Follow Along
 
 - Follow [@leeps.bsky.social](https://bsky.app/profile/leeps.bsky.social) on Bluesky for daily updates

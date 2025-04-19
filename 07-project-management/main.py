@@ -29,8 +29,9 @@ def main():
     notion_env = os.environ.copy()
     notion_env["OPENAPI_MCP_HEADERS"] = '{"Authorization": "Bearer ' + os.getenv('NOTION_INTEGRATION_ID') + '", "Notion-Version": "2022-06-28"}'
     
-    # Set up the MCP server parameters for Notion (monorepo structure)
-    repo_root = Path.cwd()
+    # Set up the MCP server parameters for Notion using the repo root
+    # Determine repository root relative to this file
+    repo_root = Path(__file__).resolve().parent.parent
     notion_mcp_dir = repo_root / "mcp-servers" / "notion-mcp-server"
     server_parameters = StdioServerParameters(
         command="node",

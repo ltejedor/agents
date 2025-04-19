@@ -31,10 +31,14 @@ cd agents/07-project-management
 pip install smolagents litellm mcp anthropic python-dotenv mcpadapt
 ```
 
-3. Install the Notion MCP server
-```bash
-npm install -g @notionhq/notion-mcp-server
-```
+3. Set up the Notion MCP server
+   The local MCP server is included under `mcp-servers/notion-mcp-server` at the project root.
+   ```bash
+   cd ../mcp-servers/notion-mcp-server
+   npm install
+   npm run build
+   npm run start
+   ```
 
 4. Create a `.env` file in the project root with your API keys
 ```
