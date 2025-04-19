@@ -66,7 +66,10 @@ def main():
 
     # Set up the MCP server parameters for Google Sheets
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    mcp_dir = os.path.join(current_dir, "google-sheets-mcp")
+    # After reorganizing MCP servers, locate Google Sheets MCP under mcp-servers
+    mcp_dir = os.path.abspath(
+        os.path.join(current_dir, "..", "mcp-servers", "google-sheets-mcp")
+    )
     server_parameters = StdioServerParameters(
         command="node",
         args=["dist/index.js"],

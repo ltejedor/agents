@@ -9,7 +9,10 @@ def main():
     
     # Set up the MCP server parameters for WhatsApp
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    whatsapp_mcp_dir = os.path.join(current_dir, "whatsapp-mcp", "whatsapp-mcp-server")
+    # After reorganizing MCP servers, locate WhatsApp MCP under mcp-servers
+    whatsapp_mcp_dir = os.path.abspath(
+        os.path.join(current_dir, "..", "mcp-servers", "whatsapp-mcp", "whatsapp-mcp-server")
+    )
     
     server_parameters = StdioServerParameters(
         command="python",

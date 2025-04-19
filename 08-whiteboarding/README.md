@@ -18,7 +18,7 @@ It’s perfect for rapid prototyping, white‑boarding bots, or teaching worksho
 
 ### 1 · Clone & set up Python env
 ```bash
-$ git clone https://github.com/ltejedor/agents.git && cd agents/08-whiteboarding/mcp_server
+$ git clone https://github.com/ltejedor/agents.git && cd agents/mcp-servers/mcp_server
 # Python ≥ 3.11 recommended
 $ python -m venv .venv && source .venv/bin/activate
 $ pip install -r requirements.txt   # fastapi, uvicorn, mcp‑server, etc.

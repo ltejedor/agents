@@ -2,6 +2,7 @@ import os
 from smolagents import ToolCollection, CodeAgent, LiteLLMModel
 from mcp import StdioServerParameters
 from anthropic import Anthropic
+from pathlib import Path
 from dotenv import load_dotenv
 import os
 from mcpadapt.core import MCPAdapt
@@ -28,11 +29,14 @@ def main():
     notion_env = os.environ.copy()
     notion_env["OPENAPI_MCP_HEADERS"] = '{"Authorization": "Bearer ' + os.getenv('NOTION_INTEGRATION_ID') + '", "Notion-Version": "2022-06-28"}'
     
-    # Set up the MCP server parameters for Notion
+    # Set up the MCP server parameters for Notion (monorepo structure)
+    repo_root = Path.cwd()
+    notion_mcp_dir = repo_root / "mcp-servers" / "notion-mcp-server"
     server_parameters = StdioServerParameters(
-        command="npx",
-        args=["-y", "@notionhq/notion-mcp-server"],
-        env=notion_env
+        command="node",
+        args=["dist/index.js"],
+        env=notion_env,
+        cwd=str(notion_mcp_dir),
     )
 
     print(server_parameters)

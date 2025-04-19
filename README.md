@@ -18,8 +18,9 @@ Each agent workflow is contained in its own folder with complete documentation, 
 ├── news/
 ├── 02-human-alignment/
 ├── 03-agent-name/
-└── ...
-```
+├── ...
+├── mcp-servers/          # Backend MCP connectors (WhatsApp, Notion, Google Sheets, etc.)
+``` 
 
 ## Current Agents
 

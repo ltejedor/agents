@@ -196,7 +196,7 @@ def main():
     agent = CodeAgent(
         tools=tools,
         model=model,
-        base_tools=True,
+        add_base_tools=True,
         additional_authorized_imports=["time", "numpy", "pandas", "json"],
         max_steps=100
     )

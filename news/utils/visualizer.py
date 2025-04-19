@@ -27,20 +27,45 @@ def build_mermaid(start):
     
     def walk(node, parent=None):
         if node in visited:
-            return parent and link(parent, get_id(node))
+            if parent:  # Only link if parent exists
+                return link(parent, get_id(node))
+            return
         
         visited.add(node)
         if isinstance(node, Flow):
-            node.start and parent and link(parent, get_id(node.start))
+            #print(f"Node {node} has properties: {', '.join(dir(node))}")
+            
+            # Handle parent-start linking separately
+            if node.start and parent:
+                link(parent, get_id(node.start))
+            
             lines.append(f"\n    subgraph sub_flow_{get_id(node)}[{type(node).__name__}]")
-            node.start and walk(node.start)
+            
+            # Simply call walk on start if it exists
+            if node.start:
+                walk(node.start)
+                
+            # Process successors with proper conditionals
             for nxt in node.successors.values():
-                node.start and walk(nxt, get_id(node.start)) or (parent and link(parent, get_id(nxt))) or walk(nxt)
+                if node.start:
+                    walk(nxt, get_id(node.start))
+                elif parent:
+                    link(parent, get_id(nxt))
+                    walk(nxt)
+                else:
+                    walk(nxt)
+                    
             lines.append("    end\n")
         else:
-            lines.append(f"    {(nid := get_id(node))}['{type(node).__name__}']")
-            parent and link(parent, nid)
-            [walk(nxt, nid) for nxt in node.successors.values()]
+            nid = get_id(node)
+            lines.append(f"    {nid}['{type(node).__name__}']")
+            if parent:
+                link(parent, nid)
+            
+            # Check if node has successors attribute before trying to access it
+            if hasattr(node, 'successors'):
+                for nxt in node.successors.values():
+                    walk(nxt, nid)
     
     walk(start)
     return "\n".join(lines)

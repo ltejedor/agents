@@ -19,7 +19,7 @@ class IngestNewsFromRSS(Node):
            # "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
             
             # Technology - Wired
-            #"https://www.wired.com/feed/rss",
+            "https://www.wired.com/feed/rss",
             
             
             # Business/Finance - CNBC Top News
@@ -62,7 +62,7 @@ class IngestNewsFromRSS(Node):
         all_articles = []
         for url in feed_urls:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:2]:  # Limit to one article per feed for testing
+            for entry in feed.entries[:1]:  # Limit to one article per feed for testing
                 article = {
                     "title": entry.title,
                     "link": entry.link,
