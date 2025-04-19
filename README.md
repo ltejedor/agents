@@ -70,6 +70,17 @@ Agents that help you promote and sell your products, such as:
 3. **Customize**: Adapt the agents to your specific product needs
 4. **Contribute**: Share your improvements or ideas by opening issues or PRs
 
+## Cloning with Submodules
+
+To ensure you also clone all MCP server backends (Notion, Google Sheets, WhatsApp), use the `--recursive` flag when cloning:
+```bash
+git clone --recursive https://github.com/yourusername/agents.git
+```
+If you've already cloned without `--recursive`, initialize and fetch the submodules with:
+```bash
+git submodule update --init --recursive
+```
+
 ## Running Agents Locally
 
 Each numbered agent workflow includes a Python entry point (`main.py`). From the repository root, you can run any workflow directly without changing directories. For example:

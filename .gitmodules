@@ -1,3 +1,12 @@
 [submodule "03-benchmark-game"]
 	path = 03-benchmark-game
 	url = https://github.com/ryanbloom/re-weird-the-web
+[submodule "mcp-servers/google-sheets-mcp"]
+	path = mcp-servers/google-sheets-mcp
+	url = https://github.com/mkummer225/google-sheets-mcp.git
+[submodule "mcp-servers/notion-mcp-server"]
+	path = mcp-servers/notion-mcp-server
+	url = https://github.com/makenotion/notion-mcp-server.git
+[submodule "mcp-servers/whatsapp-mcp"]
+	path = mcp-servers/whatsapp-mcp
+	url = https://github.com/lharries/whatsapp-mcp.git
