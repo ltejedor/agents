@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Cloud API Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.0.0/swagger-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        .header {
+            background-color: #25D366;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-logo img {
+            height: 36px;
+            margin-right: 12px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .nav-buttons a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: background-color 0.2s;
+        }
+        
+        .nav-buttons a:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .content {
+            display: flex;
+            height: calc(100vh - 68px);
+        }
+        
+        .sidebar {
+            width: 240px;
+            background-color: #f5f5f5;
+            padding: 16px;
+            overflow-y: auto;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .sidebar h3 {
+            margin-top: 24px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #666;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar li {
+            margin-bottom: 8px;
+        }
+        
+        .sidebar a {
+            display: block;
+            padding: 8px 12px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #e0e0e0;
+        }
+        
+        .swagger-ui {
+            flex: 1;
+            overflow: auto;
+            height: 100%;
+        }
+        
+        .swagger-ui .topbar {
+            display: none;
+        }
+        
+        .swagger-ui .information-container {
+            padding: 20px 30px;
+            background-color: white;
+        }
+        
+        .swagger-ui .scheme-container {
+            background-color: white;
+            box-shadow: none;
+            padding: 10px 30px;
+        }
+        
+        .swagger-ui .wrapper {
+            padding: 0;
+        }
+        
+        .swagger-ui .opblock-tag {
+            font-size: 16px;
+        }
+
+        /* Language tabs styling */
+        .language-tabs {
+            display: flex;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+        
+        .language-tabs button {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .language-tabs button.active {
+            color: #25D366;
+            font-weight: bold;
+            border-bottom: 2px solid #25D366;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Logo">
+            <h1>WhatsApp Cloud API Documentation</h1>
+        </div>
+        <div class="nav-buttons">
+            <a href="../index.html">Home</a>
+            <a href="../tutorials/getting-started.html">Tutorials</a>
+            <a href="../how-to-guides/common-issues.html">How-to Guides</a>
+            <a href="../reference/index.html">Reference</a>
+        </div>
+    </div>
+    <div class="content">
+        <div class="sidebar">
+            <h3>Messages</h3>
+            <ul>
+                <li><a href="#/paths/~1{phone-number-id}~1messages/post" class="active">Send Message</a></li>
+                <li><a href="media-messages.html">Media Messages</a></li>
+                <li><a href="interactive-messages.html">Interactive Messages</a></li>
+                <li><a href="template-messages.html">Template Messages</a></li>
+            </ul>
+            
+            <h3>Media</h3>
+            <ul>
+                <li><a href="upload-media.html">Upload Media</a></li>
+                <li><a href="retrieve-media.html">Retrieve Media</a></li>
+                <li><a href="delete-media.html">Delete Media</a></li>
+            </ul>
+            
+            <h3>Templates</h3>
+            <ul>
+                <li><a href="create-template.html">Create Template</a></li>
+                <li><a href="retrieve-templates.html">Retrieve Templates</a></li>
+                <li><a href="delete-template.html">Delete Template</a></li>
+            </ul>
+            
+            <h3>Business Profile</h3>
+            <ul>
+                <li><a href="get-business-profile.html">Get Profile</a></li>
+                <li><a href="update-business-profile.html">Update Profile</a></li>
+            </ul>
+            
+            <h3>Phone Numbers</h3>
+            <ul>
+                <li><a href="get-phone-numbers.html">Get Phone Numbers</a></li>
+                <li><a href="request-phone-number.html">Request Phone Number</a></li>
+            </ul>
+            
+            <h3>Common Workflows</h3>
+            <ul>
+                <li><a href="workflows/customer-onboarding.html">Customer Onboarding</a></li>
+                <li><a href="workflows/customer-support.html">Customer Support</a></li>
+                <li><a href="workflows/order-updates.html">Order Updates</a></li>
+                <li><a href="workflows/two-factor-authentication.html">Two-Factor Authentication</a></li>
+            </ul>
+        </div>
+        <div id="swagger-ui" class="swagger-ui"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.0.0/swagger-ui-bundle.js"></script>
+    <script>
+        window.onload = function() {
+            // Pre-configure Swagger UI
+            const ui = SwaggerUIBundle({
+                url: "./send-message.yaml",
+                dom_id: "#swagger-ui",
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                defaultModelsExpandDepth: -1, // Hide schemas section by default
+                displayRequestDuration: true,
+                docExpansion: "list",
+                syntaxHighlight: {
+                    activate: true,
+                    theme: "agate"
+                },
+                filter: true,
+                tryItOutEnabled: true,
+                persistAuthorization: true
+            });
+            
+            // Add language selector functionality
+            ui.initOAuth({
+                clientId: "your-client-id",
+                clientSecret: "your-client-secret",
+                realm: "your-realms",
+                appName: "WhatsApp API Demo",
+                scopeSeparator: " ",
+                scopes: "whatsapp_business_messaging",
+                additionalQueryStringParams: {}
+            });
+            
+            // Add language tabs dynamically when operations are rendered
+            const targetNode = document.getElementById('swagger-ui');
+            const config = { childList: true, subtree: true };
+            
+            const callback = function(mutationsList, observer) {
+                for(const mutation of mutationsList) {
+                    if (mutation.type === 'childList') {
+                        const requestBodyEditors = document.querySelectorAll('.swagger-ui .opblock .opblock-body .opblock-section.opblock-section-request-body');
+                        
+                        requestBodyEditors.forEach(editor => {
+                            // Check if we've already added tabs to this editor
+                            if (editor.querySelector('.language-tabs')) return;
+                            
+                            // Create language tabs
+                            const tabsContainer = document.createElement('div');
+                            tabsContainer.className = 'language-tabs';
+                            
+                            const languages = ['cURL', 'Node.js', 'Python', 'PHP', 'Java'];
+                            languages.forEach((lang, index) => {
+                                const button = document.createElement('button');
+                                button.textContent = lang;
+                                button.className = index === 0 ? 'active' : '';
+                                button.addEventListener('click', function() {
+                                    // Toggle active class
+                                    tabsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                                    this.classList.add('active');
+                                    
+                                    // Here you would normally switch code examples
+                                    // For demo purposes we're just showing the functionality
+                                    console.log('Switched to', lang);
+                                });
+                                tabsContainer.appendChild(button);
+                            });
+                            
+                            // Insert tabs before the request body content
+                            const requestBodyContent = editor.querySelector('.opblock-description-wrapper');
+                            if (requestBodyContent) {
+                                editor.insertBefore(tabsContainer, requestBodyContent);
+                            }
+                        });
+                    }
+                }
+            };
+            
+            const observer = new MutationObserver(callback);
+            observer.observe(targetNode, config);
+        }
+    </script>
+</body>
+</html>

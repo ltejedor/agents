@@ -1,0 +1,522 @@
+openapi: 3.0.0
+info:
+  title: WhatsApp Business Cloud API
+  description: |
+    The WhatsApp Business Cloud API allows businesses to communicate with their customers at scale. 
+    Using the API, developers and businesses can build systems that connect thousands of customers 
+    with agents or bots, enabling both programmatic and manual communication.
+  version: v18.0
+  contact:
+    name: Meta for Developers
+    url: https://developers.facebook.com/docs/whatsapp/cloud-api/
+servers:
+  - url: https://graph.facebook.com/v18.0
+    description: Meta Graph API Server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication. Obtain an access token from the Meta Developer Dashboard.
+tags:
+  - name: Messages
+    description: Send and manage WhatsApp messages
+  - name: Media
+    description: Upload, retrieve and manage media files
+  - name: Templates
+    description: Manage message templates
+  - name: Business Profile
+    description: Manage your business profile information
+paths:
+  /{phone-number-id}/messages:
+    parameters:
+      - name: phone-number-id
+        in: path
+        required: true
+        description: ID for the phone number connected to the WhatsApp Business API
+        schema:
+          type: string
+    post:
+      summary: Send Message
+      description: |
+        Send a WhatsApp message to a customer. The API supports various types of messages including 
+        text, media, template, interactive, and location messages.
+      operationId: sendMessage
+      tags:
+        - Messages
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TextMessage'
+                - $ref: '#/components/schemas/TemplateMessage'
+                - $ref: '#/components/schemas/MediaMessage'
+                - $ref: '#/components/schemas/InteractiveMessage'
+                - $ref: '#/components/schemas/LocationMessage'
+            examples:
+              textMessage:
+                summary: Text Message
+                value:
+                  messaging_product: whatsapp
+                  recipient_type: individual
+                  to: '16505551234'
+                  type: text
+                  text:
+                    preview_url: false
+                    body: Hello, welcome to our service!
+              templateMessage:
+                summary: Template Message
+                value:
+                  messaging_product: whatsapp
+                  recipient_type: individual
+                  to: '16505551234'
+                  type: template
+                  template:
+                    name: hello_world
+                    language:
+                      code: en_US
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+  /{phone-number-id}/media:
+    parameters:
+      - name: phone-number-id
+        in: path
+        required: true
+        description: ID for the phone number connected to the WhatsApp Business API
+        schema:
+          type: string
+    post:
+      summary: Upload Media
+      description: Upload media that can be sent in a WhatsApp message
+      operationId: uploadMedia
+      tags:
+        - Media
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                messaging_product:
+                  type: string
+                  enum: [whatsapp]
+                file:
+                  type: string
+                  format: binary
+                  description: Media file to upload
+                type:
+                  type: string
+                  enum: [audio, document, image, sticker, video]
+      responses:
+        '200':
+          description: Media uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: '123456789'
+                  messaging_product:
+                    type: string
+                    example: whatsapp
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+  /{phone-number-id}/whatsapp_business_profile:
+    parameters:
+      - name: phone-number-id
+        in: path
+        required: true
+        description: ID for the phone number connected to the WhatsApp Business API
+        schema:
+          type: string
+    get:
+      summary: Get Business Profile
+      description: Retrieve business profile information
+      operationId: getBusinessProfile
+      tags:
+        - Business Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Business profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessProfileResponse'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Update Business Profile
+      description: Update business profile information
+      operationId: updateBusinessProfile
+      tags:
+        - Business Profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messaging_product:
+                  type: string
+                  enum: [whatsapp]
+                about:
+                  type: string
+                  description: The About text for your business profile
+                address:
+                  type: string
+                  description: Address of the business
+                description:
+                  type: string
+                  description: Description of the business
+                email:
+                  type: string
+                  description: Email address for the business
+                websites:
+                  type: array
+                  items:
+                    type: string
+                  description: URLs associated with the business
+                vertical:
+                  type: string
+                  description: Industry of the business (e.g., RETAIL, FOOD_AND_BEVERAGE)
+      responses:
+        '200':
+          description: Business profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+components:
+  schemas:
+    MessageResponse:
+      type: object
+      properties:
+        messaging_product:
+          type: string
+          example: whatsapp
+        contacts:
+          type: array
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+                example: '16505551234'
+              wa_id:
+                type: string
+                example: '16505551234'
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: wamid.HBgLMTY1MDUwNzY1MjAVAgARGBI5QTNDQTVCM0Q0Q0Q2RTY3RTcA
+              message_status:
+                type: string
+                enum: [accepted, held_for_quality_assessment]
+                example: accepted
+    TextMessage:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+        - text
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          example: whatsapp
+        recipient_type:
+          type: string
+          enum: [individual]
+          default: individual
+          example: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number of the customer
+          example: '16505551234'
+        type:
+          type: string
+          enum: [text]
+          example: text
+        text:
+          type: object
+          required: [body]
+          properties:
+            preview_url:
+              type: boolean
+              default: false
+              example: false
+            body:
+              type: string
+              description: The text of the message
+              example: Hello, this is a text message!
+    TemplateMessage:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+        - template
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          example: whatsapp
+        recipient_type:
+          type: string
+          enum: [individual]
+          default: individual
+          example: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number of the customer
+          example: '16505551234'
+        type:
+          type: string
+          enum: [template]
+          example: template
+        template:
+          type: object
+          required: [name, language]
+          properties:
+            name:
+              type: string
+              description: Name of the template
+              example: hello_world
+            language:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  description: The code of the language or locale to use
+                  example: en_US
+            components:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [header, body, button]
+                    example: body
+                  parameters:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [text, currency, date_time, image, document, video]
+                          example: text
+                        text:
+                          type: string
+                          example: John Doe
+    MediaMessage:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          example: whatsapp
+        recipient_type:
+          type: string
+          enum: [individual]
+          default: individual
+          example: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number of the customer
+          example: '16505551234'
+        type:
+          type: string
+          enum: [image, audio, document, sticker, video]
+          example: image
+        image:
+          oneOf:
+            - required: [id]
+              properties:
+                id:
+                  type: string
+                  description: Media object ID
+                  example: '12345678'
+            - required: [link]
+              properties:
+                link:
+                  type: string
+                  description: HTTP/HTTPS URL of the media
+                  example: https://example.com/image.jpg
+    InteractiveMessage:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+        - interactive
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          example: whatsapp
+        recipient_type:
+          type: string
+          enum: [individual]
+          default: individual
+          example: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number of the customer
+          example: '16505551234'
+        type:
+          type: string
+          enum: [interactive]
+          example: interactive
+        interactive:
+          type: object
+          required: [type]
+          properties:
+            type:
+              type: string
+              enum: [button, list, product, product_list, flow]
+              example: button
+            body:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: The content of the message
+                  example: Please select an option
+            action:
+              type: object
+              properties:
+                buttons:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [reply]
+                        example: reply
+                      reply:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: unique_button_id_1
+                          title:
+                            type: string
+                            example: Yes
+    LocationMessage:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+        - location
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          example: whatsapp
+        recipient_type:
+          type: string
+          enum: [individual]
+          default: individual
+          example: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number of the customer
+          example: '16505551234'
+        type:
+          type: string
+          enum: [location]
+          example: location
+        location:
+          type: object
+          required: [longitude, latitude, name, address]
+          properties:
+            longitude:
+              type: number
+              example: -122.4233
+            latitude:
+              type: number
+              example: 37.7754
+            name:
+              type: string
+              example: Meta Headquarters
+            address:
+              type: string
+              example: 1 Hacker Way, Menlo Park, CA
+    BusinessProfileResponse:
+      type: object
+      properties:
+        messaging_product:
+          type: string
+          example: whatsapp
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              about:
+                type: string
+                example: Our company sells eco-friendly products.
+              address:
+                type: string
+                example: 1 Hacker Way, Menlo Park, CA
+              description:
+                type: string
+                example: We provide eco-friendly solutions for a greener planet.
+              email:
+                type: string
+                example: contact@example.com
+              websites:
+                type: array
+                items:
+                  type: string
+                example: ['https://example.com']
+              vertical:
+                type: string
+                example: RETAIL

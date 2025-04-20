@@ -1,0 +1,379 @@
+openapi: 3.0.3
+info:
+  title: WhatsApp Cloud API - Send Message
+  description: |
+    This is the Send Message API endpoint for the WhatsApp Cloud API.
+    It allows you to send various types of messages to WhatsApp users.
+  version: '17.0'
+  contact:
+    name: Meta Cloud API Support
+    url: 'https://developers.facebook.com/docs/whatsapp/cloud-api'
+servers:
+  - url: 'https://graph.facebook.com/v17.0'
+    description: Meta Graph API v17.0
+paths:
+  '/{phone-number-id}/messages':
+    post:
+      operationId: sendMessage
+      summary: Send a message to a WhatsApp user
+      description: |
+        Send various types of messages to a WhatsApp user including text messages, 
+        media messages, template messages, and interactive messages.
+      tags:
+        - Messages
+      parameters:
+        - name: phone-number-id
+          in: path
+          description: ID for the phone number that will be used to send the message
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+            examples:
+              text-message:
+                summary: Send a simple text message
+                value:
+                  messaging_product: "whatsapp"
+                  recipient_type: "individual"
+                  to: "+1XXXXXXXXXX"
+                  type: "text"
+                  text:
+                    preview_url: false
+                    body: "Hello, this is a test message"
+              template-message:
+                summary: Send a template message
+                value:
+                  messaging_product: "whatsapp"
+                  to: "+1XXXXXXXXXX"
+                  type: "template"
+                  template:
+                    name: "hello_world"
+                    language:
+                      code: "en_US"
+              media-message:
+                summary: Send an image message
+                value:
+                  messaging_product: "whatsapp"
+                  to: "+1XXXXXXXXXX"
+                  type: "image"
+                  image:
+                    link: "https://example.com/image.jpg"
+                    caption: "Optional image caption"
+              interactive-message:
+                summary: Send a message with buttons
+                value:
+                  messaging_product: "whatsapp"
+                  to: "+1XXXXXXXXXX"
+                  type: "interactive"
+                  interactive:
+                    type: "button"
+                    header:
+                      type: "text"
+                      text: "Header text"
+                    body:
+                      text: "Body text"
+                    footer:
+                      text: "Footer text"
+                    action:
+                      buttons:
+                        - type: "reply"
+                          reply:
+                            id: "button-1"
+                            title: "Yes"
+                        - type: "reply"
+                          reply:
+                            id: "button-2"
+                            title: "No"
+      responses:
+        '200':
+          description: Message successfully sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success-response:
+                  summary: Successful response
+                  value:
+                    messaging_product: "whatsapp"
+                    contacts:
+                      - input: "+1XXXXXXXXXX"
+                        wa_id: "1XXXXXXXXXX"
+                    messages:
+                      - id: "wamid.HBgLMTIxNjk5NTk5NTk5NTk5NRUCABIYFjNFQjBBQUVDOUQ5QTYzMzNCNjkwQTIA"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid-phone:
+                  summary: Invalid phone number format
+                  value:
+                    error:
+                      message: "Invalid parameter: to must be a valid phone number in E.164 format"
+                      type: "OAuthException"
+                      code: 100
+                      fbtrace_id: "AXmmhGlbT0ChhskCdf123a"
+                invalid-template:
+                  summary: Template not approved
+                  value:
+                    error:
+                      message: "Template not approved or does not exist for the given language"
+                      type: "OAuthException"
+                      code: 131047
+                      fbtrace_id: "AXdavN0lbT9CvR23Gjk1Ts"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid-token:
+                  summary: Invalid access token
+                  value:
+                    error:
+                      message: "Invalid OAuth access token"
+                      type: "OAuthException"
+                      code: 190
+                      fbtrace_id: "AXZzhF12Lb9aJbVvC5dM8a"
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficient-permission:
+                  summary: Missing required permissions
+                  value:
+                    error:
+                      message: "Insufficient permission to send messages"
+                      type: "OAuthException"
+                      code: 200
+                      fbtrace_id: "AX1RxHs5tT6CfGhA5k2R7B"
+        '429':
+          description: Too Many Requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rate-limit:
+                  summary: Rate limit exceeded
+                  value:
+                    error:
+                      message: "Application request limit reached"
+                      type: "OAuthException"
+                      code: 80004
+                      fbtrace_id: "AXQzhrPtV0CnjB5fRs1Es7"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Provide your WhatsApp Cloud API access token.
+        You can obtain this from your Meta Developer Dashboard.
+  schemas:
+    MessageRequest:
+      type: object
+      required:
+        - messaging_product
+        - to
+        - type
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          description: Set to "whatsapp"
+        recipient_type:
+          type: string
+          enum: [individual]
+          description: The type of recipient. Currently only "individual" is supported.
+          default: individual
+        to:
+          type: string
+          description: WhatsApp ID or phone number for the customer in E.164 format
+          example: "+1XXXXXXXXXX"
+        type:
+          type: string
+          enum: [text, template, image, document, audio, video, sticker, location, contacts, interactive, reaction]
+          description: The type of message to send
+        text:
+          type: object
+          description: Required when type=text
+          properties:
+            preview_url:
+              type: boolean
+              description: Set to true to display a URL preview
+              default: false
+            body:
+              type: string
+              description: The text message content
+              example: "Hello, this is a test message"
+        template:
+          type: object
+          description: Required when type=template
+          properties:
+            name:
+              type: string
+              description: Name of the template
+              example: "hello_world"
+            language:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Language code of the template
+                  example: "en_US"
+            components:
+              type: array
+              description: Array of components for the template
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [header, body, button]
+                    description: Type of template component
+                  parameters:
+                    type: array
+                    description: Parameters for the component
+                    items:
+                      type: object
+        image:
+          type: object
+          description: Required when type=image
+          properties:
+            link:
+              type: string
+              description: The URL of the image
+              example: "https://example.com/image.jpg"
+            id:
+              type: string
+              description: The media ID of a previously uploaded image
+            caption:
+              type: string
+              description: Optional caption for the image
+              example: "Check out this image"
+        interactive:
+          type: object
+          description: Required when type=interactive
+          properties:
+            type:
+              type: string
+              enum: [button, list, product, product_list]
+              description: Type of interactive message
+            header:
+              type: object
+              description: Optional header content
+              properties:
+                type:
+                  type: string
+                  enum: [text, image, document, video]
+                  description: Type of header content
+                text:
+                  type: string
+                  description: Text for the header (if type=text)
+            body:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+                  description: Body text of the message
+            footer:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Footer text of the message
+            action:
+              type: object
+              description: Interactive message action
+              properties:
+                buttons:
+                  type: array
+                  description: Array of buttons (for button messages)
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [reply]
+                        description: Type of button
+                      reply:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: Unique identifier for the button
+                          title:
+                            type: string
+                            description: Button text displayed to the user
+                sections:
+                  type: array
+                  description: Array of sections (for list messages)
+                  items:
+                    type: object
+    MessageResponse:
+      type: object
+      properties:
+        messaging_product:
+          type: string
+          enum: [whatsapp]
+          description: Set to "whatsapp"
+        contacts:
+          type: array
+          description: Information about the contact
+          items:
+            type: object
+            properties:
+              input:
+                type: string
+                description: Phone number used in the API request
+              wa_id:
+                type: string
+                description: WhatsApp ID for the customer
+        messages:
+          type: array
+          description: Information about the message
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The message ID
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              description: Error description
+            type:
+              type: string
+              description: Error type
+            code:
+              type: integer
+              description: Error code
+            error_subcode:
+              type: integer
+              description: Error subcode
+            fbtrace_id:
+              type: string
+              description: Trace identifier
+security:
+  - bearerAuth: []
