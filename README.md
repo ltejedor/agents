@@ -1,6 +1,6 @@
 # 30 Agents in 30 Days
 
-[![Follow on Bluesky](https://img.shields.io/badge/Follow-Bluesky-blue)](https://bsky.app/profile/leeps.bsky.social)
+[![Follow along on Bluesky](https://img.shields.io/badge/Follow-Bluesky-blue)](https://bsky.app/hashtag/30daysofagents?author=leeps.bsky.social)
 [![Website](https://img.shields.io/badge/Website-agents.mechifact.com-green)](https://agents.mechifact.com/)
 
 AI agent workflows designed to save you time when developing products - across research, development, testing, marketing, and sales.
@@ -22,14 +22,6 @@ Each agent workflow is contained in its own folder with complete documentation, 
 ├── mcp-servers/          # Backend MCP connectors (WhatsApp, Notion, Google Sheets, etc.)
 ``` 
 
-## Current Agents
-
-### 1. Research: Real-time Startup Ideas
-
-An AI agent that tracks breaking news and comes up with and rates the quality of in-the-moment startup ideas.
-
-- [GitHub](https://github.com/ltejedor/agents/tree/main/news)
-- [Live Demo](https://ideas.mechifact.com/)
 
 ## What's Coming
 
@@ -109,5 +101,5 @@ pip install -r requirements.txt
 
 ## Follow Along
 
-- Follow [@leeps.bsky.social](https://bsky.app/profile/leeps.bsky.social) on Bluesky for daily updates
+- Follow [#30daysofagents @leeps.bsky.social](https://bsky.app/hashtag/30daysofagents?author=leeps.bsky.social) on Bluesky for daily updates
 - Visit [agents.mechifact.com](https://agents.mechifact.com/) for interactive demos
