@@ -63,7 +63,9 @@ Agents that help you promote and sell your products, such as:
 - Lead qualification
 - Sales outreach automation
 
-## How to Use This Repository
+## How to Use This Project
+
+Each agent workflow folder includes a README.md tutorial with step-by-step instructions and examples.
 
 1. **Browse**: Explore the different agent workflows organized by category
 2. **Implement**: Follow the instructions in each agent's README to set up the workflow
