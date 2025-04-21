@@ -22,3 +22,4 @@ langchain_openai          # for Knowledge Graph agent only
 streamlit
 streamlit_react_flow
 streamlit_nested_layout
+smolagents[litellm]
