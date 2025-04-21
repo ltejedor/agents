@@ -17,12 +17,37 @@ st.subheader("Starter Org Template")
 # Initialize session state to store agent configuration
 if "agents_config" not in st.session_state:
     st.session_state.agents_config = {
-        "manager": {"id": "1", "type": "manager", "label": "Manager"},
+        "manager": {
+            "id": "0",
+            "type": "manager",
+            # user-facing label
+            "display_name": "Leslie Knope",
+            # internal identifier for CodeAgent
+            "name": "leslie_knope",
+            "description": "Hyper-organized and driven manager who never misses a detail. Loves binders, waffles, and getting things done."
+        },
         "workers": [
-            {"id": "2", "type": "agent", "label": "agent_one", "model": "claude"},
-            {"id": "3", "type": "agent", "label": "agent_two", "model": "claude"}
+            {
+                "id": "1",
+                "type": "agent",
+                # user-facing label
+                "display_name": "Ben Wyatt",
+                # internal identifier for CodeAgent
+                "name": "ben_wyatt",
+                "description": "Numbers guy. Analytical, practical, and the go-to for budgeting and strategy.",
+                "model": "claude"
+            },
+            {
+                "id": "2",
+                "type": "agent",
+                "display_name": "April Ludgate",
+                "name": "april_ludgate",
+                "description": "Handles the weird stuff. Mysterious, unpredictable, and surprisingly effective.",
+                "model": "claude"
+            }
         ]
     }
+
 
 # Create the react-flow elements based on the agent configuration
 def create_elements_from_config():
@@ -30,8 +55,9 @@ def create_elements_from_config():
     
     # Add manager node
     elements.append({
-        "id": st.session_state.agents_config["manager"]["id"], 
-        "data": {"label": st.session_state.agents_config["manager"]["label"]}, 
+        "id": st.session_state.agents_config["manager"]["id"],
+        # use display_name for user-facing label
+        "data": {"label": st.session_state.agents_config["manager"]["display_name"]},
         "type": "input",
         "style": {"background": '#ffcc50', "width": 100},
         "position": {"x": 250, "y": 100}
@@ -50,10 +76,10 @@ def create_elements_from_config():
     else:
         x_positions = [int(margin + (available_width * i / (n - 1))) for i in range(n)]
     for i, worker in enumerate(workers):
-        display_label = worker.get("display_label", worker["label"])
         elements.append({
             "id": worker["id"],
-            "data": {"label": display_label},
+            # use display_name if available, otherwise internal name
+            "data": {"label": worker.get("display_name", worker["name"])},
             "type": "output",
             "position": {"x": x_positions[i], "y": 250}
         })
@@ -77,8 +103,8 @@ def create_agents_from_config():
     workers = {}
     for worker in st.session_state.agents_config["workers"]:
         # Agent internal name and human-readable description
-        agent_name = worker["label"]
-        description = worker.get("display_label", agent_name)
+        agent_name = worker.get("name")
+        description = worker.get("description")
         if worker["type"] in ("agent", "codeagent"):
             workers[worker["id"]] = CodeAgent(
                 tools=[],
@@ -113,7 +139,12 @@ with col1:
         st.session_state.agents_config["workers"].append({
             "id": new_id,
             "type": "agent",
-            "label": label,
+            # internal identifier
+            "name": label,
+            # user-facing label
+            "display_name": label,
+            # optional role description
+            "description": "A new hire in the office",
             "model": "claude"
         })
 with col2:
@@ -122,6 +153,46 @@ with col2:
             # remove worker with highest numeric id
             to_remove = max(st.session_state.agents_config["workers"], key=lambda w: int(w["id"]))
             st.session_state.agents_config["workers"].remove(to_remove)
+
+# Allow editing of worker labels and descriptions
+# Allow editing of worker internal name, display name, and description
+with st.expander("Edit Worker Details", expanded=False):
+    for w in st.session_state.agents_config["workers"]:
+        st.write(f"Agent ID: {w['id']}")
+        # Internal identifier for coding use
+        internal_key = f"internal_{w['id']}"
+        new_internal = st.text_input(
+            f"Internal Name ({w['id']})", 
+            w.get("name", ""), 
+            key=internal_key
+        )
+        # User-facing label
+        display_key = f"display_{w['id']}"
+        new_display = st.text_input(
+            f"Display Name ({w['id']})", 
+            w.get("display_name", w.get("name", "")), 
+            key=display_key
+        )
+        # Optional description
+        desc_key = f"desc_{w['id']}"
+        new_desc = st.text_area(
+            f"Description ({w['id']})", 
+            w.get("description", ""), 
+            height=100,
+            key=desc_key
+        )
+        # Update internal name if changed
+        if new_internal != w.get("name"):
+            clean = re.sub(r'\W|^(?=\d)', '_', new_internal).lower()
+            if not clean or not clean.isidentifier():
+                clean = f"agent_{w['id']}"
+            w["name"] = clean
+        # Update display name
+        if new_display != w.get("display_name", w.get("name")):
+            w["display_name"] = new_display
+        # Update description
+        if new_desc != w.get("description"):
+            w["description"] = new_desc
 
 # Create the flow visualization
 elements = create_elements_from_config()
@@ -149,32 +220,34 @@ if True:  # always enable graph editing
         # Update manager
         manager_node = next((n for n in nodes if n["type"] == "input"), None)
         if manager_node:
-            st.session_state.agents_config["manager"]["label"] = manager_node["data"]["label"]
-            # Also store the display label
-            st.session_state.agents_config["manager"]["display_label"] = manager_node["data"]["label"]
+            # Update user-facing label from graph edit
+            st.session_state.agents_config["manager"]["display_name"] = manager_node["data"]["label"]
         
         # Update workers - ensure valid Python identifiers for labels used as agent names
         worker_nodes = [n for n in nodes if n["type"] == "output"]
         for worker_node in worker_nodes:
+            # Get updated display label from graph
             display_label = worker_node["data"]["label"]
-            # Convert display label to valid Python identifier for agent name
-            agent_name = re.sub(r'\W|^(?=\d)', '_', display_label).lower()
-            if not agent_name or agent_name[0].isdigit():
-                agent_name = "agent_" + agent_name
-            
-            # Find existing worker or create new entry
-            existing_worker = next((w for w in st.session_state.agents_config["workers"] 
-                                if w["id"] == worker_node["id"]), None)
-            
+            # Find existing worker config
+            existing_worker = next(
+                (w for w in st.session_state.agents_config["workers"] if w["id"] == worker_node["id"]),
+                None
+            )
             if existing_worker:
-                existing_worker["display_label"] = display_label
-                existing_worker["label"] = agent_name
+                # update only the user-facing label
+                existing_worker["display_name"] = display_label
             else:
+                # create new worker entry with display and internal names
+                # sanitize display_label to internal identifier
+                internal = re.sub(r'\W|^(?=\d)', '_', display_label).lower()
+                if not internal or not internal.isidentifier():
+                    internal = f"agent_{worker_node['id']}"
                 st.session_state.agents_config["workers"].append({
                     "id": worker_node["id"],
                     "type": "agent",
-                    "label": agent_name,
-                    "display_label": display_label,
+                    "name": internal,
+                    "display_name": display_label,
+                    "description": "",
                     "model": "claude"
                 })
         
