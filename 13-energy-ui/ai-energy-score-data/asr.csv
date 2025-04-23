@@ -1,0 +1,14 @@
+model,total_gpu_energy,energy_score
+distil-whisper/distil-large-v2,0.021521125,4
+distil-whisper/distil-medium.en,0.016971399,5
+distil-whisper/distil-small.en,0.015568577,5
+openai/whisper-base,0.016545973,5
+openai/whisper-tiny,0.013442129,5
+openai/whisper-large-v3,0.086679066,1
+openai/whisper-small,0.029965155,4
+openai/whisper-medium,0.061421628,2
+facebook/s2t-small-librispeech-asr,0.017201768,5
+facebook/hubert-large-ls960-ft,0.001615015,5
+facebook/mms-1b-all,0.004284855,5
+facebook/wav2vec2-base-960h,0.000619699,5
+asapp/sew-d-base-plus-400k-ft-ls100h,0.001536815,5

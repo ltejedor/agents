@@ -1,0 +1,14 @@
+model,total_gpu_energy,energy_score
+nlptown/bert-base-multilingual-uncased-sentiment,0.000356581,5
+bhadresh-savani/electra-base-emotion,0.000252137,5
+distilbert/distilbert-base-uncased-finetuned-sst-2-english,0.000217736,5
+michelecafagna26/gpt2-medium-finetuned-sst2-sentiment,0.000801512,5
+lxyuan/distilbert-base-multilingual-cased-sentiments-student,0.000221417,5
+mnoukhov/gpt2-imdb-sentiment-classifier,0.000318768,5
+lvwerra/distilbert-imdb,0.000216022,5
+Cheng98/bert-large-sst2,0.000918014,5
+google-t5/t5-large,0.007919763,4
+google-t5/t5-11b,0.027787079,1
+google-t5/t5-3b,0.011680516,3
+google-t5/t5-base,0.004126364,5
+google-t5/t5-small,0.002216067,5

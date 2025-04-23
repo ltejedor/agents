@@ -1,0 +1,13 @@
+model,total_gpu_energy,energy_score
+Mitsua/mitsua-diffusion-one,0.186811914,5
+gsdf/Counterfeit-V2.5,0.187366386,5
+stabilityai/sd-turbo,0.189864946,5
+stabilityai/stable-cascade,1.214355539,2
+stabilityai/stable-diffusion-2-1,0.534466733,4
+stabilityai/sdxl-turbo,0.385568798,5
+stabilityai/stable-diffusion-xl-base-1.0,1.639845472,1
+dreamlike-art/dreamlike-photoreal-2.0,0.581331892,4
+prompthero/openjourney-v4,0.203367331,5
+prompthero/openjourney,0.196880224,5
+SimianLuo/LCM_Dreamshaper_v7,0.322044411,5
+Yntec/epiCPhotoGasm,0.586574491,4

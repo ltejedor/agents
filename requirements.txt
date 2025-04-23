@@ -23,3 +23,5 @@ streamlit
 streamlit_react_flow
 streamlit_nested_layout
 smolagents[litellm]
+smolagents[transformers]
+hf_xet

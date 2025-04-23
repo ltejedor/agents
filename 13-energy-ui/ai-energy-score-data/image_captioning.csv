@@ -1,0 +1,11 @@
+model,total_gpu_energy,energy_score
+Salesforce/blip2-flan-t5-xxl,0.179930966,1
+Salesforce/blip-image-captioning-large,0.048511441,5
+Salesforce/blip-image-captioning-base,0.04711837,5
+Salesforce/blip2-opt-2.7b,0.101335529,3
+Salesforce/blip2-flan-t5-xl,0.102152107,3
+Salesforce/blip2-opt-6.7b,0.174957802,1
+microsoft/git-large-coco,0.170319617,1
+microsoft/git-base,0.074705602,4
+sashakunitsyn/vlrm-blip2-opt-2.7b,0.103347386,3
+google/pix2struct-base,0.04574709,5

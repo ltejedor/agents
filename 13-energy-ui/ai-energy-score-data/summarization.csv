@@ -1,0 +1,12 @@
+model,total_gpu_energy,energy_score
+pszemraj/led-large-book-summary,0.004288572,5
+facebook/bart-large-cnn,0.002039253,5
+KipperDev/bart_summarizer_model,0.000784852,5
+google/bigbird-pegasus-large-arxiv,0.003523812,5
+sshleifer/distilbart-cnn-12-6,0.001481002,5
+sshleifer/distilbart-xsum-12-1,0.001049138,5
+google-t5/t5-large,0.008676504,4
+google-t5/t5-11b,0.034807171,1
+google-t5/t5-3b,0.013240065,4
+google-t5/t5-base,0.004230194,5
+google-t5/t5-small,0.002266265,5

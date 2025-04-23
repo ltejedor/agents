@@ -1,0 +1,8 @@
+model,total_gpu_energy,energy_score
+microsoft/conditional-detr-resnet-50,0.002144589,5
+facebook/detr-resnet-50-dc5,0.003291817,4
+facebook/detr-resnet-50-dc5,0.003278611,4
+facebook/detr-resnet-101,0.002531398,4
+hustvl/yolos-tiny,0.001004166,5
+hustvl/yolos-small,0.003281148,4
+hustvl/yolos-base,0.007980927,1
