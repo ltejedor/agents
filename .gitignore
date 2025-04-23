@@ -23,3 +23,4 @@ news/utils/__pycache__
 mcp-servers/google-sheets-mcp/dist/gcp-oauth.keys.json
 
 13-energy-ui/smolagents-ref
+13-energy-ui/__pycache__
