@@ -1,7 +1,3 @@
-"""
-Interactive CLI agent that uses the local Google Sheets MCP server
-via standard I/O and dispatches spreadsheet commands.
-"""
 import os
 from dotenv import load_dotenv
 from smolagents import ToolCollection, CodeAgent, LiteLLMModel, ToolCallingAgent
@@ -46,9 +42,6 @@ def main():
         cwd=mcp_dir,
     )
 
-
-
-    # Build a multi-agent system: cleaner, study, visualization, plus manager
     with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as gs_tool_collection:
         data_tools = [*gs_tool_collection.tools]
 
@@ -77,7 +70,6 @@ def main():
             additional_authorized_imports=["time", "pandas", "numpy"],
         )
 
-        #print("Multi-agent system initialized. Sub-agents:", [ag.name for ag in manager_agent.managed_agents])
         # Interactive REPL via manager
         while True:
             task = input("\nEnter task (or 'exit' to quit): ")
