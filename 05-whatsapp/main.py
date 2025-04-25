@@ -2,6 +2,8 @@ import os
 from smolagents import ToolCollection, CodeAgent, LiteLLMModel
 from mcp import StdioServerParameters
 from anthropic import Anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
 def main():
     # Initialize the Anthropic client for Claude
