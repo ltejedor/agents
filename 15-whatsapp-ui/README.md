@@ -27,8 +27,8 @@ This project provides a Streamlit-based web interface for interacting with Whats
 ### 1. Clone this repository
 
 ```bash
-git clone https://github.com/yourusername/whatsapp-ui.git
-cd whatsapp-ui
+git clone https://github.com/ltejedor/agents.git
+cd agents/15-whatsapp-ui
 ```
 
 ### 2. Install Python dependencies
