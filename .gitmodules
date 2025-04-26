@@ -10,3 +10,6 @@
 [submodule "mcp-servers/whatsapp-mcp"]
 	path = mcp-servers/whatsapp-mcp
 	url = https://github.com/lharries/whatsapp-mcp.git
+[submodule "mcp-servers/FastDomainCheck-MCP-Server"]
+	path = mcp-servers/FastDomainCheck-MCP-Server
+	url = https://github.com/bingal/FastDomainCheck-MCP-Server.git

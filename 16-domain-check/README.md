@@ -1,0 +1,1 @@
+does a business idea have a really good domain name available?
