@@ -12,7 +12,7 @@ def main():
     except Exception:
         pass
 
-    # Initialize Supabase client
+    # Initialize Supabase client (for random selection)
     SUPABASE_URL = os.environ.get("SUPABASE_URL")
     SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
@@ -20,12 +20,27 @@ def main():
         return
     supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    # Fetch startup ideas
-    print("Fetching startup ideas from Supabase...")
-    response = supabase.table("startup_ideas").select("id, title, business_idea").execute()
-    ideas = response.data or []
-    print(f"Found {len(ideas)} ideas.")
-    if not ideas:
+    # Ask user for input method
+    choice = input("Select input method:\n1) Enter a custom startup idea\n2) Use a random idea from Supabase\n> ").strip()
+    if choice == "1":
+        # Manual entry
+        title = input("Enter idea title: ").strip()
+        desc = input("Enter idea description: ").strip()
+        ideas = [{"id": None, "title": title, "business_idea": desc}]
+    elif choice == "2":
+        # Random selection from Supabase
+        import random
+        print("Fetching startup ideas from Supabase...")
+        resp = supabase.table("startup_ideas").select("id, title, business_idea").execute()
+        all_ideas = resp.data or []
+        if not all_ideas:
+            print("No ideas found in database.")
+            return
+        chosen = random.choice(all_ideas)
+        ideas = [chosen]
+        print(f"Selected idea ID {chosen.get('id')}: {chosen.get('title')}")
+    else:
+        print("Invalid choice. Exiting.")
         return
 
     # Configure the FastDomainCheck MCP server
@@ -49,6 +64,7 @@ def main():
             tools=tool_collection.tools,
             model=model,
             add_base_tools=True,
+            additional_authorized_imports=["json"],
             name="domain_agent",
             description="Suggest and check domain availability for startup ideas",
         )
@@ -59,19 +75,23 @@ def main():
             title = idea.get("title", "")
             desc = idea.get("business_idea", "")
 
+            # Construct prompt: suggest only easy-to-pronounce .com domains and check availability
             prompt = f"""You are a helpful assistant. Given the following startup idea, do the following:
 
-1. Propose 5 short, catchy, and relevant domain names (with TLDs) for this idea.
-2. Use the `check_domains` tool to check their availability.
-3. Return the output in JSON format like:
+1. Propose up to 5 short, one-word, catchy, and relevant .com domain names for this idea.
+   Only include names that are easy to pronounce (i.e., someone can hear them and repeat them correctly).
+2. Use the `check_domains` tool to check availability of each proposed .com name.
+3. Return the result in JSON format with the structure:
    {{
      "idea_id": {idea_id},
      "domains": {{
-       "domain1.com": true,
-       "domain2.com": false,
+       "name1.com": true,
+       "name2.com": false,
        ...
      }}
    }}
+
+If no suitable .com names exist, return an empty domains object.
 
 Startup Idea:
 Title: {title}
