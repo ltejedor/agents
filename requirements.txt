@@ -19,6 +19,12 @@ langchain                 # for Knowledge Graph agent only
 langchain_experimental    # for Knowledge Graph agent only
 langchain_openai          # for Knowledge Graph agent only
 
+# A2A system dependencies
+sentence-transformers     # for embedding and clustering in A2A system
+hdbscan                   # for clustering in A2A system
+supabase                  # for database access
+uuid                      # for generating unique IDs
+
 streamlit
 streamlit_react_flow
 streamlit_nested_layout
