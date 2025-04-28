@@ -26,3 +26,6 @@ mcp-servers/google-sheets-mcp/dist/gcp-oauth.keys.json
 13-energy-ui/__pycache__
 
 15-whatsapp-ui/__pycache__
+18-proof-of-work/smolagents-ref
+18-proof-of-work/__pycache__
+18-proof-of-work/02/__pycache__
