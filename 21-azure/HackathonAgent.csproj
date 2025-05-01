@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Azure OpenAI client (with built-in Bing grounding preview) -->
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.2.0-beta.4" />
+    <!-- Core Azure functionality (BinaryData, AzureKeyCredential) -->
+    <PackageReference Include="Azure.Core" Version="1.44.1" />
+    <!-- ASP.NET Core hosting and auth for Agents SDK -->
+    <PackageReference Include="Microsoft.Agents.Hosting.AspNetCore" Version="0.2.*-*" />
+    <PackageReference Include="Microsoft.Agents.Authentication.Msal" Version="0.2.*-*" />
+  </ItemGroup>
+</Project>
