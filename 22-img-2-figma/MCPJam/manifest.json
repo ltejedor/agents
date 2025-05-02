@@ -1,0 +1,20 @@
+{
+  "name": "MCPJam",
+  "id": "1494788103989038259",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figjam"
+  ],
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ],
+    "reasoning": "Bridge polls our MCP server for board‑mutation commands",
+    "devAllowedDomains": ["http://localhost:8787"]
+  }
+}

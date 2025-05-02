@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const ENDPOINT = "http://localhost:8787/pull";      // change for prod
+
+async function poll() {
+  try {
+    const res = await fetch(ENDPOINT, { credentials: "include" });
+    if (res.ok) {
+      const cmds = await res.json();          // could be [] or an array
+      cmds.forEach(cmd =>
+        parent.postMessage({ pluginMessage: cmd }, "*")
+      );
+    }
+  } catch (err) {
+    console.error("MCP poll error", err);
+  } finally {
+    setTimeout(poll, 2000);                    // repeat every 2 s
+  }
+}
+poll();
+</script>
+</body>
+</html>
