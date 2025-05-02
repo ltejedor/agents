@@ -6,6 +6,7 @@ figma.showUI(__html__, { visible: false, width: 0, height: 0 });
 const stickyNodes: StickyNode[] = [];
 type Cmd =
   | { op: "create_sticky"; text: string; x: number; y: number }
+  | { op: "create_text"; text: string; x: number; y: number }
   | { op: "move_node"; id: string; x: number; y: number }
   | { op: "start_timer"; seconds: number }
   | { op: "create_connector"; start_id?: string; end_id?: string };
@@ -17,10 +18,25 @@ figma.ui.onmessage = async (cmd: Cmd) => {
       // Load the default sticky font before setting text
       await figma.loadFontAsync({ family: "Inter", style: "Medium" });
       sticky.text.characters = cmd.text;
-      sticky.x = cmd.x;
-      sticky.y = cmd.y;
+      // Position sticky so its center aligns with the provided coordinates
+      // (accounts for actual sticky dimensions to avoid overlap)
+      const w = sticky.width;
+      const h = sticky.height;
+      sticky.x = cmd.x - w / 2;
+      sticky.y = cmd.y - h / 2;
       // record sticky for later connector creation
       stickyNodes.push(sticky);
+      break;
+    }
+    case "create_text": {
+      const textNode = figma.createText();
+      // Load header font before setting text
+      await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+      textNode.fontName = { family: "Inter", style: "Bold" };
+      textNode.fontSize = 24;
+      textNode.characters = cmd.text;
+      textNode.x = cmd.x;
+      textNode.y = cmd.y;
       break;
     }
     case "move_node": {

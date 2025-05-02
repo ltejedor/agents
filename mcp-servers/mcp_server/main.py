@@ -57,6 +57,27 @@ def http_create_sticky(
     # enqueue the same command as the MCP tool
     qmod.push({"op": "create_sticky", "text": text, "x": x, "y": y})
     return {"result": "queued"}
+
+@app.get("/mcp/create_text")
+def http_create_text(
+    text: str,
+    x: int = 0,
+    y: int = 0,
+):
+    """
+    HTTP endpoint wrapper for the create_text MCP tool.
+    Allows GET requests to enqueue a text-creation command.
+
+    Args:
+        text: The text to render.
+        x: The x position.
+        y: The y position.
+
+    Returns:
+        dict: Result of the operation.
+    """
+    qmod.push({"op": "create_text", "text": text, "x": x, "y": y})
+    return {"result": "queued"}
     
 @app.get("/mcp/move_node")
 def http_move_node(
@@ -160,6 +181,10 @@ if __name__ == "__main__":
             if end_id is not None:
                 cmd["end_id"] = end_id
             qmod.push(cmd)
+            return "queued"
+        @mcp_server.tool(name="create_text")
+        def create_text_tool(text: str, x: int = 0, y: int = 0):  # noqa: F811
+            qmod.push({"op": "create_text", "text": text, "x": x, "y": y})
             return "queued"
         # Run the server over stdio
         mcp_server.run("stdio")

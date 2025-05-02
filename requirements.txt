@@ -1,4 +1,7 @@
 smolagents
+# Local OCR parsing for img-2-figma (whiteboard OCR)
+opencv-python
+pytesseract
 pocketflow
 
 # WhatsApp agent dependencies (05-whatsapp)

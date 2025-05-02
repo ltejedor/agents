@@ -34,6 +34,27 @@ def create_sticky(text: str, x: int = 0, y: int = 0) -> str:
     return data.get("result", "")
     
 @tool
+def create_text(text: str, x: int = 0, y: int = 0) -> str:
+    """
+    Enqueue a 'create_text' command via the MCP HTTP endpoint.
+
+    Args:
+        text: The text content to render.
+        x: The x-coordinate where the text should be placed.
+        y: The y-coordinate where the text should be placed.
+
+    Returns:
+        str: A status message, typically "queued".
+    """
+    resp = requests.get(
+        "http://localhost:8787/mcp/create_text",
+        params={"text": text, "x": x, "y": y},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("result", "")
+@tool
 def move_node(id: str, x: int = 0, y: int = 0) -> str:
     """
     Enqueue a 'move_node' command via the MCP HTTP endpoint.
@@ -102,29 +123,48 @@ def create_connector(start_id: str | None = None, end_id: str | None = None) -> 
     return data.get("result", "")
     
 @tool
-def ingest_whiteboard(image_path: str) -> str:
+def read_txt_file(filepath: str = "whiteboard.txt") -> str:
     """
-    Parse a whiteboard image and enqueue commands to recreate it in FigJam.
+    Reads the contents of the text file.
 
     Args:
-        image_path: Local file path to the whiteboard image.
+        filepath: file
 
     Returns:
-        str: Summary of queued operations.
+        The full contents of the file as a string
     """
-    elements = parse_whiteboard(image_path)
-    count = 0
-    # Maps temporary indices to created node IDs if available
-    for el in elements:
-        typ = el.get('type')
-        if typ == 'sticky':
-            create_sticky(el.get('text', ''), el.get('x', 0), el.get('y', 0))
-            count += 1
-        elif typ == 'connector':
-            create_connector(el.get('start_id'), el.get('end_id'))
-            count += 1
-        # Add other element types here as needed
-    return f"Queued {count} elements from {image_path}"
+    with open(filepath, "r") as f:
+        return f.read()
+
+
+# @tool
+# def ingest_whiteboard(image_path: str) -> str:
+#     """
+#     Parse a whiteboard image and enqueue commands to recreate it in FigJam.
+
+#     Args:
+#         image_path: Local file path to the whiteboard image.
+
+#     Returns:
+#         str: Summary of queued operations.
+#     """
+#     elements = parse_whiteboard(image_path)
+#     print(elements)
+#     count = 0
+#     # Maps temporary indices to created node IDs if available
+#     for el in elements:
+#         typ = el.get('type')
+#         if typ == 'sticky':
+#             create_sticky(el.get('text', ''), el.get('x', 0), el.get('y', 0))
+#             count += 1
+#         elif typ == 'connector':
+#             create_connector(el.get('start_id'), el.get('end_id'))
+#             count += 1
+#         elif typ == 'text':
+#             create_text(el.get('text', ''), el.get('x', 0), el.get('y', 0))
+#             count += 1
+#         # Add other element types here as needed
+#     return f"Queued {count} elements from {image_path}"
 
 def main():
     # Initialize the LLM model (Anthropic Claude)
@@ -133,10 +173,12 @@ def main():
     # Collect HTTP-backed MCP tools
     tool_collection = ToolCollection([
         create_sticky,
+        create_text,
         move_node,
         start_timer,
         create_connector,
-        ingest_whiteboard,
+        read_txt_file
+        #ingest_whiteboard,
     ])
     print("Available tools:", [t.name for t in tool_collection.tools])
 
@@ -144,7 +186,7 @@ def main():
     agent = CodeAgent(
         tools=[*tool_collection.tools],
         model=model,
-        additional_authorized_imports=["time", "numpy", "pandas", "json"],
+        additional_authorized_imports=["time", "numpy", "pandas", "json", "os", "posixpath"],
         add_base_tools=False,
     )
     print("Agent initialized. Ready to accept commands.")

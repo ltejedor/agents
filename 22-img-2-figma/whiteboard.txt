@@ -1,0 +1,80 @@
+{
+  "sections": [
+    {
+      "id": "decision_flow",
+      "region": "center_left",
+      "items": [
+        { "type": "text",      "id": "research",        "content": "Research" },
+        { "type": "arrow",     "from": "research",      "to": "refine",      "style": "curved" },
+        { "type": "text",      "id": "refine",          "content": "Refine" },
+        { "type": "arrow",     "from": "refine",        "to": "select",      "style": "curved" },
+        { "type": "text",      "id": "select",          "content": "select" },
+        { "type": "arrow",     "from": "select",        "to": "decision_node","style": "straight" },
+        { "type": "shape",     "id": "decision_node",   "shape": "circle" },
+        { "type": "text",      "id": "decision_label",  "content": "test or build" }
+      ]
+    },
+    {
+      "id": "test_branch",
+      "region": "top_center",
+      "items": [
+        { "type": "text",      "content": "test:",                      "style": "underline" },
+        { "type": "bullet",    "content": "selling = b2b + b2c" },
+        { "type": "bullet",    "content": "marketing/ads" },
+        { "type": "sub-bullet","content": "landing page / waitlist" },
+        { "type": "sub-bullet","content": "social traction" }
+      ],
+      "arrows": [
+        { "from": "decision_node", "to": "test_branch" }
+      ]
+    },
+    {
+      "id": "marketing",
+      "region": "mid_right",
+      "items": [
+        { "type": "text",      "content": "Marketing",  "style": "underline" },
+        { "type": "bullet",    "content": "buy a domain" },
+        { "type": "bullet",    "content": "post a landing page (or multiple) w/ a functional form or calendar link" },
+        { "type": "bullet",    "content": "create social graphics?" },
+        { "type": "sub-bullet","content": "write potential posts that could go viral?" }
+      ],
+      "arrows": [
+        { "from": "decision_node", "to": "marketing" }
+      ]
+    },
+    {
+      "id": "sales",
+      "region": "mid_right",
+      "items": [
+        { "type": "text",      "content": "Sales",   "style": "underline" },
+        { "type": "bullet",    "content": "tied to research",   "prefix": "→" },
+        { "type": "bullet",    "content": "% really isn’t necessarily traction – could be a good market but hard to break in",   "prefix": "→" }
+      ]
+    },
+    {
+      "id": "build",
+      "region": "right",
+      "items": [
+        { "type": "text",      "content": "Build",      "style": "underline" },
+        { "type": "bullet",    "content": "choose stack for project" },
+        { "type": "sub-bullet","content": "research + choose libraries in advance" },
+        { "type": "bullet",    "content": "write user-focused tests" },
+        { "type": "bullet",    "content": "build (w/codex, w/e) until tests pass (commit often)" },
+        { "type": "sub-bullet","content": "update the humans w/ screenshots – no need to click through to test" },
+        { "type": "note",      "content": "create a design language / style based on user / industry",  "position": "free_floating_top_right" }
+      ],
+      "arrows": [
+        { "from": "decision_node", "to": "build" }
+      ]
+    },
+    {
+      "id": "agent_notes",
+      "region": "bottom_left",
+      "items": [
+        { "type": "text",      "content": "each tool for that step is available – the agents are step specific, not role/model/etc specific." },
+        { "type": "arrow",     "from": "agent_notes",   "to": "decision_flow", "direction": "up" },
+        { "type": "bullet",    "content": "cycles until some idea hits a certain threshold, then moves fwd" },
+      ]
+    }
+  ]
+}
