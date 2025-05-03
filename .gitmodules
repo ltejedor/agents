@@ -13,3 +13,6 @@
 [submodule "mcp-servers/FastDomainCheck-MCP-Server"]
 	path = mcp-servers/FastDomainCheck-MCP-Server
 	url = https://github.com/bingal/FastDomainCheck-MCP-Server.git
+[submodule "23-3d/project"]
+	path = 23-3d/project
+	url = https://github.com/ltejedor/ai-garden

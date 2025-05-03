@@ -118,19 +118,21 @@ def main():
     )
     
     # Construct a task prompt instructing the agent.
-    task = f"""
-        I'm building out a project that's going to be built on top of the WhatsApp API that you can access
-        with a business account. Include instructions on getting set up, and a section on common issues developers
-        have run into.
-        Additionally, please create an OpenAPI site that lays out all functions of the Meta Cloud
-        API. Under each major function, create an interactive code section for testing that API using native 
-        OpenAPI features and best practices. Include a section that covers common example workflows, even if each
-        individual system call has already been covered. When structuring the OpenAPI site, draw inspiration from
-        the Diataxis model of documentation. Under the hood, attempt to use structured data whenever possible, with
-        links to all sections that are referenced. Include interactive examples whenever helpful.
+    # task = f"""
+    #     I'm building out a project that's going to be built on top of the WhatsApp API that you can access
+    #     with a business account. Include instructions on getting set up, and a section on common issues developers
+    #     have run into.
+    #     Additionally, please create an OpenAPI site that lays out all functions of the Meta Cloud
+    #     API. Under each major function, create an interactive code section for testing that API using native 
+    #     OpenAPI features and best practices. Include a section that covers common example workflows, even if each
+    #     individual system call has already been covered. When structuring the OpenAPI site, draw inspiration from
+    #     the Diataxis model of documentation. Under the hood, attempt to use structured data whenever possible, with
+    #     links to all sections that are referenced. Include interactive examples whenever helpful.
 
-        Add all files to the folder documentation_multi_agent/
-    """
+    #     Add all files to the folder documentation_multi_agent/
+    # """
+
+    task="make an art work based on the agent experience on my laptop ty"
     
     # Run the agent with the task.
     print("Running agent task...")
