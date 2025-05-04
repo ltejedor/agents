@@ -1,10 +1,18 @@
 from smolagents import CodeAgent, InferenceClientModel, GradioUI, tool
-from huggingface_hub import HfApi
-from huggingface_hub import snapshot_download
+import os
+from huggingface_hub import HfApi, login, snapshot_download
 import requests
 from typing import List, Dict
 from typing import Optional, Union
 from pathlib import Path
+
+# read token from environment
+HF_TOKEN = os.getenv("HUGGINGFACE_API_KEY")
+if not HF_TOKEN:
+    raise RuntimeError("HUGGINGFACE_API_KEY environment variable is not set")
+
+# tell huggingface_hub to use it
+login(token=HF_TOKEN)
 
 @tool
 def leaderboard_search(query: str) -> str:
@@ -29,7 +37,7 @@ def leaderboard_search(query: str) -> str:
                 "full": True  # Get full information
             }
             
-            response = requests.get(api_url, params=params)
+            response = requests.get(api_url, params=params, headers={"Authorization": f"Bearer {HF_TOKEN}"})
             print(response)
             
             spaces = response.json()
@@ -137,7 +145,7 @@ def get_file_from_space(space_id: str, file_path: str) -> str:
     """
     try:
         url = f"https://huggingface.co/spaces/{space_id}/raw/main/{file_path}"
-        response = requests.get(url)
+        response = requests.get(url, headers={"Authorization": f"Bearer {HF_TOKEN}"})
         
         if response.status_code == 200:
             return f"Content of {file_path} from {space_id}:\n\n{response.text}"
