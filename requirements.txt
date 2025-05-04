@@ -33,4 +33,6 @@ streamlit_react_flow
 streamlit_nested_layout
 smolagents[litellm]
 smolagents[transformers]
+# Hugging Face Hub client for searching spaces
+huggingface_hub
 hf_xet

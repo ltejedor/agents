@@ -1,0 +1,3 @@
+gradio>=5.25.2
+smolagents>=1.14.0
+huggingface_hub
